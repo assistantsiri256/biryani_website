@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-blue"><i class="bi bi-people-fill"></i></div><div><div class="stat-value">{{ total_members|intcomma }}</div><div class="stat-label">Total members · {{ active_distributors }} active distributors</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-green"><i class="bi bi-currency-rupee"></i></div><div><div class="stat-value">₹{{ total_sales|floatformat:0|intcomma }}</div><div class="stat-label">Total product sales · {{ orders_today }} today</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-orange"><i class="bi bi-cash-stack"></i></div><div><div class="stat-value">₹{{ commission_liability|floatformat:0|intcomma }}</div><div class="stat-label">Pending commission liability</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-red"><i class="bi bi-arrow-up-right-circle"></i></div><div><div class="stat-value">{{ pending_withdrawals.n|default:0 }}</div><div class="stat-label">Pending withdrawals · ₹{{ pending_withdrawals.s|default:0|floatformat:0|intcomma }}</div></div></div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-xl-8"><div class="card h-100"><div class="card-header">Sales – last 14 days</div><div class="card-body"><canvas id="salesChart" height="120"></canvas></div></div></div>
+  <div class="col-xl-4"><div class="card h-100"><div class="card-header">New members</div>
+    <ul class="list-group list-group-flush small">
+      {% for m in new_members %}<li class="list-group-item d-flex justify-content-between"><span><span class="fw-semibold">{{ m.member_id }}</span> · {{ m.get_full_name|default:m.username }}</span><span class="text-muted-2">{{ m.get_role_display }}</span></li>{% endfor %}
+    </ul>
+    <div class="card-footer small text-muted-2">Commission paid out to date: <strong class="text-earn">₹{{ commission_paid|floatformat:0|intcomma }}</strong></div>
+  </div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between"><span>Recent orders</span><a href="{% url 'reports:admin_orders' %}" class="small">All orders</a></div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="text-end">Amount</th><th class="text-end">BV</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for o in recent_orders %}
+        <tr><td><a href="{{ o.get_absolute_url }}" class="fw-semibold text-decoration-none">{{ o.order_number }}</a></td><td>{{ o.customer.member_id }}</td><td class="small">{{ o.created_at|date:"d M, H:i" }}</td>
+          <td class="text-end">₹{{ o.total_amount|floatformat:2|intcomma }}</td><td class="text-end">{{ o.total_volume|floatformat:0 }}</td><td>{% include "includes/order_status.html" with status=o.status label=o.get_status_display %}</td></tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-muted-2 py-4">No orders yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const s = {{ sales_chart|safe }}, j = {{ joins_chart|safe }};
+  new Chart(document.getElementById("salesChart"), {
+    data: { labels: s.labels, datasets: [
+      { type: "bar", label: "Sales (₹)", data: s.values, backgroundColor: "#3b82f6", borderRadius: 6, maxBarThickness: 30, yAxisID: "y" },
+      { type: "line", label: "New members", data: j, borderColor: "#22c55e", backgroundColor: "#22c55e", tension: .3, yAxisID: "y1" }
+    ]},
+    options: { interaction: { mode: "index", intersect: false }, scales: {
+      y: { beginAtZero: true, grid: { color: "#eef2f7" } },
+      y1: { beginAtZero: true, position: "right", grid: { display: false }, ticks: { precision: 0 } },
+      x: { grid: { display: false } } } }
+  });
+</script>
+{% endblock %}

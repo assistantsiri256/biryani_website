@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Withdrawals{% endblock %}
+{% block page_title %}Withdrawal Requests{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2">
+    {% for v, l in statuses %}<a href="?status={{ v }}" class="btn btn-sm {% if status == v %}btn-primary{% else %}btn-light{% endif %}">{{ l }}</a>{% endfor %}
+    <a href="?status=" class="btn btn-sm {% if not status %}btn-primary{% else %}btn-light{% endif %}">All</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>#</th><th>Member</th><th>Requested</th><th class="text-end">Amount</th><th>Payout details</th><th>Status</th><th style="min-width:300px">Action</th></tr></thead>
+      <tbody>
+      {% for r in page %}
+        <tr>
+          <td>{{ r.pk }}</td>
+          <td class="small"><span class="fw-semibold">{{ r.member.member_id }}</span><div class="text-muted-2">{{ r.member.get_full_name|default:r.member.username }}</div></td>
+          <td class="small">{{ r.created_at|date:"d M Y, H:i" }}</td>
+          <td class="text-end fw-semibold">₹{{ r.amount|floatformat:2|intcomma }}</td>
+          <td class="small">
+            {% if r.payout_details.upi_id %}UPI: {{ r.payout_details.upi_id }}<br>{% endif %}
+            {% if r.payout_details.account_number %}{{ r.payout_details.account_name }} · A/C {{ r.payout_details.account_number }} · {{ r.payout_details.ifsc }}{% endif %}
+          </td>
+          <td>{% include "includes/order_status.html" with status=r.status label=r.get_status_display %}{% if r.payment_reference %}<div class="small text-muted-2">{{ r.payment_reference }}</div>{% endif %}</td>
+          <td>
+            {% if r.status == 'pending' or r.status == 'approved' %}
+            <form method="post" action="{% url 'reports:admin_withdrawal_action' r.pk %}" class="d-flex flex-wrap gap-1">
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <input name="payment_reference" class="form-control form-control-sm" placeholder="UTR / transaction ref" style="max-width:150px">
+              <input name="note" class="form-control form-control-sm" placeholder="Note" style="max-width:120px">
+              {% if r.status == 'pending' %}<button name="action" value="approve" class="btn btn-sm btn-outline-primary">Approve</button>{% endif %}
+              <button name="action" value="pay" class="btn btn-sm btn-success">Mark paid</button>
+              <button name="action" value="reject" class="btn btn-sm btn-outline-danger">Reject</button>
+            </form>
+            {% else %}<span class="small text-muted-2">{{ r.admin_note|default:"—" }} {% if r.processed_by %}· by {{ r.processed_by.member_id }}{% endif %}</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="7" class="text-center text-muted-2 py-4">No withdrawal requests.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</div>
+{% endblock %}

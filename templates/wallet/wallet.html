@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Wallet{% endblock %}
+{% block page_title %}Wallet{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-green"><i class="bi bi-wallet2"></i></div><div><div class="stat-value text-earn">₹{{ summary.balance|floatformat:2|intcomma }}</div><div class="stat-label">Available balance</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-orange"><i class="bi bi-hourglass-split"></i></div><div><div class="stat-value">₹{{ summary.pending|floatformat:2|intcomma }}</div><div class="stat-label">Pending commissions</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-blue"><i class="bi bi-graph-up-arrow"></i></div><div><div class="stat-value">₹{{ summary.total_earned|floatformat:2|intcomma }}</div><div class="stat-label">Total earned</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center"><div class="stat-icon bg-soft-purple"><i class="bi bi-bank"></i></div><div><div class="stat-value">₹{{ summary.total_withdrawn|floatformat:2|intcomma }}</div><div class="stat-label">Total withdrawn</div></div></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center"><span>Transaction history</span><a href="{% url 'withdrawals:list' %}" class="btn btn-sm btn-primary"><i class="bi bi-arrow-up-right"></i> Request withdrawal</a></div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>Date</th><th>Description</th><th class="text-end">Amount</th></tr></thead>
+          <tbody>
+          {% for t in txs %}
+            <tr><td class="small text-nowrap">{{ t.created_at|date:"d M Y, H:i" }}</td><td class="small">{{ t.description|default:t.reference }}</td>
+              <td class="text-end fw-semibold {% if t.transaction_type == 'credit' %}text-earn{% else %}text-danger{% endif %}">{% if t.transaction_type == 'credit' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:2|intcomma }}</td></tr>
+          {% empty %}
+            <tr><td colspan="3" class="text-center text-muted-2 py-4">No wallet transactions yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if txs.has_other_pages %}
+      <div class="card-footer d-flex justify-content-between small">
+        {% if txs.has_previous %}<a href="?page={{ txs.previous_page_number }}">← Newer</a>{% else %}<span></span>{% endif %}
+        <span>Page {{ txs.number }} of {{ txs.paginator.num_pages }}</span>
+        {% if txs.has_next %}<a href="?page={{ txs.next_page_number }}">Older →</a>{% else %}<span></span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="card">
+      <div class="card-header">Recent commissions</div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle small">
+          <thead><tr><th>Type</th><th>Order</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for c in commissions %}
+            <tr><td>{{ c.get_commission_type_display }}{% if c.capped %} <span class="badge bg-light text-dark" title="Daily cap applied">capped</span>{% endif %}</td><td>{{ c.order.order_number }}</td><td class="text-end">₹{{ c.amount|floatformat:2|intcomma }}</td><td>{% include "includes/order_status.html" with status=c.status label=c.get_status_display %}</td></tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-center text-muted-2 py-4">No commissions yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

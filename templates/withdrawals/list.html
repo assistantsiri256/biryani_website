@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Withdrawals{% endblock %}
+{% block page_title %}Withdrawals{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">New withdrawal request</div>
+      <div class="card-body">
+        <div class="mb-3"><div class="stat-label">Available balance</div><div class="h4 fw-bold text-earn mb-0">₹{{ balance|floatformat:2|intcomma }}</div></div>
+        {% if not user.is_verified %}
+        <div class="alert alert-warning small mb-0">Verify your email address before withdrawing. <a href="{% url 'accounts:verify_mobile' %}">Verify now</a></div>
+        {% elif has_payout %}
+        <div class="small text-muted-2 mb-3">Paid to: {% if profile.upi_id %}UPI {{ profile.upi_id }}{% else %}A/C {{ profile.masked_account }} · {{ profile.bank_ifsc }}{% endif %}</div>
+        <form method="post">
+          {% csrf_token %}
+          <label class="form-label small fw-semibold">Amount (₹)</label>
+          <input type="number" name="amount" step="0.01" min="{{ min_withdrawal }}" max="{{ balance }}" class="form-control mb-2" required>
+          <div class="form-text mb-3">Minimum ₹{{ min_withdrawal|floatformat:0 }}. We'll send an OTP to confirm. The amount is held from your wallet until the request is processed.</div>
+          <button class="btn btn-primary w-100" {% if balance < min_withdrawal %}disabled{% endif %}>Continue</button>
+        </form>
+        {% else %}
+        <div class="alert alert-warning small mb-0">Add your bank account or UPI ID in <a href="{% url 'accounts:profile' %}">Profile</a> before requesting a withdrawal.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">Request history</div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>#</th><th>Date</th><th class="text-end">Amount</th><th>Status</th><th>Reference / note</th></tr></thead>
+          <tbody>
+          {% for r in requests %}
+            <tr><td>{{ r.pk }}</td><td class="small">{{ r.created_at|date:"d M Y" }}</td><td class="text-end fw-semibold">₹{{ r.amount|floatformat:2|intcomma }}</td>
+              <td>{% include "includes/order_status.html" with status=r.status label=r.get_status_display %}</td>
+              <td class="small text-muted-2">{{ r.payment_reference }} {{ r.admin_note }}</td></tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted-2 py-4">No withdrawal requests yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

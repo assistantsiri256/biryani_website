@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Transactions{% endblock %}
+{% block page_title %}Transactions{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-red"><i class="bi bi-wallet2"></i></div>
+    <div><div class="stat-value">₹{{ balance|floatformat:2|intcomma }}</div><div class="stat-label">Wallet Balance</div></div></div></div></div>
+  <div class="col-md-4"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-green"><i class="bi bi-arrow-down-left"></i></div>
+    <div><div class="stat-value">₹{{ credits|floatformat:2|intcomma }}</div><div class="stat-label">Total Credits</div></div></div></div></div>
+  <div class="col-md-4"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-orange"><i class="bi bi-arrow-up-right"></i></div>
+    <div><div class="stat-value">₹{{ debits|floatformat:2|intcomma }}</div><div class="stat-label">Total Debits</div></div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <span class="me-2">Transaction History</span>
+    <a href="?" class="btn btn-sm {% if not kind %}btn-primary{% else %}btn-light{% endif %}">All</a>
+    <a href="?kind=credit" class="btn btn-sm {% if kind == 'credit' %}btn-primary{% else %}btn-light{% endif %}">Credits</a>
+    <a href="?kind=debit" class="btn btn-sm {% if kind == 'debit' %}btn-primary{% else %}btn-light{% endif %}">Debits</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Date</th><th>Description</th><th>Reference</th><th>Type</th><th class="text-end">Amount</th></tr></thead>
+      <tbody>
+      {% for t in page %}
+        <tr>
+          <td class="small text-nowrap">{{ t.created_at|date:"d M Y, H:i" }}</td>
+          <td class="small">{{ t.description|default:"—" }}</td>
+          <td class="small text-muted-2">{{ t.reference }}</td>
+          <td>{% if t.transaction_type == 'credit' %}<span class="badge bg-success">Credit</span>{% else %}<span class="badge bg-warning">Debit</span>{% endif %}</td>
+          <td class="text-end fw-semibold {% if t.transaction_type == 'credit' %}text-earn{% else %}text-danger{% endif %}">{% if t.transaction_type == 'credit' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:2|intcomma }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-center text-muted-2 py-5">No transactions yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</div>
+{% endblock %}

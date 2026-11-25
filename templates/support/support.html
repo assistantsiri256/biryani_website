@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Support{% endblock %}
+{% block page_title %}Support{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-headset text-danger me-1"></i> Raise a ticket</div>
+      <div class="card-body">
+        <form method="post">{% csrf_token %}
+          {% for field in form %}{% include "includes/field.html" %}{% endfor %}
+          <button class="btn btn-primary w-100"><i class="bi bi-send"></i> Submit ticket</button>
+        </form>
+      </div>
+    </div>
+    <div class="notice-box small mt-3">
+      <strong><i class="bi bi-info-circle"></i> Tip:</strong> mention your order number or withdrawal ID so we can help faster.
+      You'll get a notification when we reply.
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">My tickets <span class="badge bg-secondary ms-1">{{ tickets|length }}</span></div>
+      <div class="list-group list-group-flush">
+        {% for t in tickets %}
+        <div class="list-group-item py-3">
+          <div class="d-flex flex-wrap justify-content-between gap-2">
+            <div class="fw-semibold">{{ t.subject }}</div>
+            <span class="badge {% if t.status == 'open' %}bg-warning{% elif t.status == 'answered' %}bg-success{% else %}bg-secondary{% endif %}">{{ t.get_status_display }}</span>
+          </div>
+          <div class="small text-muted-2 mb-2">{{ t.ticket_no }} · {{ t.get_category_display }} · {{ t.created_at|date:"d M Y, H:i" }}</div>
+          <div class="small">{{ t.message|linebreaksbr }}</div>
+          {% if t.admin_reply %}
+          <div class="notice-box small mt-2">
+            <strong><i class="bi bi-reply"></i> Support reply</strong> <span class="text-muted-2">· {{ t.replied_at|date:"d M Y, H:i" }}</span>
+            <div class="mt-1 text-body">{{ t.admin_reply|linebreaksbr }}</div>
+          </div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="list-group-item text-center text-muted-2 py-5">No tickets yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

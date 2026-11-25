@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}My Referrals{% endblock %}
+{% block page_title %}My Direct Referrals{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">Members you sponsored <span class="badge bg-primary ms-1">{{ referrals|length }}</span></div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Member</th><th>Role</th><th>Placed under</th><th>Leg</th><th>Status</th><th>Joined</th></tr></thead>
+      <tbody>
+      {% for r in referrals %}
+        <tr>
+          <td><div class="fw-semibold">{{ r.member.member_id }}</div><div class="small text-muted-2">{{ r.member.get_full_name|default:r.member.username }}</div></td>
+          <td>{{ r.member.get_role_display }}</td>
+          <td>{{ r.member.binary_node.parent.member.member_id|default:"—" }}</td>
+          <td>{% if r.member.binary_node %}<span class="badge {% if r.member.binary_node.position == 'left' %}bg-soft-purple{% else %}bg-soft-orange{% endif %}">{{ r.member.binary_node.get_position_display }}</span>{% else %}—{% endif %}</td>
+          <td>{% if r.member.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Blocked</span>{% endif %}</td>
+          <td class="small">{{ r.created_at|date:"d M Y" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted-2 py-5">You haven't referred anyone yet. Share your referral link from the dashboard.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

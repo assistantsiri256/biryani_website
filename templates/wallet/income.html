@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{% if ctype == 'binary' %}Binary Income{% else %}Income History{% endif %}{% endblock %}
+{% block page_title %}{% if ctype == 'binary' %}Binary Income{% else %}Income History{% endif %}{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-green"><i class="bi bi-cash-stack"></i></div>
+    <div><div class="stat-value">₹{{ binary_total|add:direct_total|floatformat:2|intcomma }}</div><div class="stat-label">Total Income</div></div></div></div></div>
+  <div class="col-md-4"><a href="?type=binary" class="text-decoration-none"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-purple"><i class="bi bi-diagram-3"></i></div>
+    <div><div class="stat-value">₹{{ binary_total|floatformat:2|intcomma }}</div><div class="stat-label">Binary Income</div></div></div></div></a></div>
+  <div class="col-md-4"><a href="?type=direct" class="text-decoration-none"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-orange"><i class="bi bi-person-check"></i></div>
+    <div><div class="stat-value">₹{{ direct_total|floatformat:2|intcomma }}</div><div class="stat-label">Direct Sale Income</div></div></div></div></a></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <a href="?{% if status %}status={{ status }}{% endif %}" class="btn btn-sm {% if not ctype %}btn-primary{% else %}btn-light{% endif %}">All income</a>
+    {% for v, l in types %}<a href="?type={{ v }}{% if status %}&status={{ status }}{% endif %}" class="btn btn-sm {% if ctype == v %}btn-primary{% else %}btn-light{% endif %}">{{ l }}</a>{% endfor %}
+    <span class="vr mx-1"></span>
+    <a href="?{% if ctype %}type={{ ctype }}{% endif %}" class="btn btn-sm {% if not status %}btn-primary{% else %}btn-light{% endif %}">Any status</a>
+    {% for v, l in statuses %}<a href="?status={{ v }}{% if ctype %}&type={{ ctype }}{% endif %}" class="btn btn-sm {% if status == v %}btn-primary{% else %}btn-light{% endif %}">{{ l }}</a>{% endfor %}
+    <span class="ms-auto small text-muted-2">Shown total: <strong class="text-earn">₹{{ filter_total|floatformat:2|intcomma }}</strong></span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Date</th><th>Type</th><th>Order</th><th class="text-end">Volume (BV)</th><th class="text-end">Rate</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for c in page %}
+        <tr>
+          <td class="small text-nowrap">{{ c.created_at|date:"d M Y, H:i" }}</td>
+          <td>{{ c.get_commission_type_display }}{% if c.capped %} <span class="badge bg-light text-dark" title="Daily cap applied">capped</span>{% endif %}</td>
+          <td class="small">{{ c.order.order_number }}</td>
+          <td class="text-end">{{ c.volume|floatformat:0|intcomma }}</td>
+          <td class="text-end">{{ c.rate|floatformat:2 }}%</td>
+          <td class="text-end fw-semibold text-earn">₹{{ c.amount|floatformat:2|intcomma }}</td>
+          <td>{% include "includes/order_status.html" with status=c.status label=c.get_status_display %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted-2 py-5">No income found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</div>
+<p class="small text-muted-2 mt-3 mb-0"><i class="bi bi-info-circle"></i> Income is earned only from paid product orders. Pending income moves to your wallet when the company releases it.</p>
+{% endblock %}

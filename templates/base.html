@@ -1,0 +1,98 @@
+{% load static %}<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · BinaryPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% block body %}
+{% with url=request.resolver_match.view_name %}
+<aside class="bp-sidebar" id="sidebar">
+  <a href="{% url 'reports:dashboard' %}" class="bp-brand"><span class="logo"><i class="bi bi-diagram-3-fill"></i></span><span class="name">BinaryPro</span><span class="tag">Network</span></a>
+  <nav class="bp-nav">
+    <a href="{% url 'reports:dashboard' %}" class="{% if url == 'reports:dashboard' %}active{% endif %}"><i class="bi bi-grid-fill"></i>Dashboard</a>
+    <a href="{% url 'accounts:profile' %}" class="{% if url == 'accounts:profile' %}active{% endif %}"><i class="bi bi-person-fill"></i>My Profile</a>
+    <a href="{% url 'network:team' %}" class="{% if url == 'network:team' or url == 'network:direct' %}active{% endif %}"><i class="bi bi-people-fill"></i>My Team</a>
+    <a href="{% url 'deposits:home' %}" class="{% if url == 'deposits:home' %}active{% endif %}"><i class="bi bi-wallet2"></i>Deposit</a>
+    {% if user.binary_node or user.is_company_admin %}
+    <a href="{% url 'network:tree' %}" class="{% if url == 'network:tree' %}active{% endif %}"><i class="bi bi-diagram-3"></i>Binary Tree</a>
+    {% endif %}
+    <a href="{% url 'orders:list' %}" class="{% if url == 'orders:list' or url == 'orders:detail' %}active{% endif %}"><i class="bi bi-receipt"></i>My Orders</a>
+    <a href="{% url 'withdrawals:list' %}" class="{% if url == 'withdrawals:list' or url == 'withdrawals:confirm' %}active{% endif %}"><i class="bi bi-arrow-up-right-circle"></i>Withdrawal</a>
+    <a href="{% url 'wallet:income' %}" class="{% if url == 'wallet:income' and request.GET.type != 'binary' %}active{% endif %}"><i class="bi bi-clock-history"></i>Income History</a>
+    <a href="{% url 'wallet:transactions' %}" class="{% if url == 'wallet:transactions' %}active{% endif %}"><i class="bi bi-list-check"></i>Transaction</a>
+    <a href="{% url 'wallet:income' %}?type=binary" class="{% if url == 'wallet:income' and request.GET.type == 'binary' %}active{% endif %}"><i class="bi bi-diagram-2-fill"></i>Binary Income</a>
+    <a href="{% url 'wallet:home' %}" class="{% if url == 'wallet:home' %}active{% endif %}"><i class="bi bi-wallet-fill"></i>My Wallet</a>
+    <a href="{% url 'support:home' %}" class="{% if url == 'support:home' %}active{% endif %}"><i class="bi bi-headset"></i>Support</a>
+    <a href="{% url 'accounts:settings' %}" class="{% if url == 'accounts:settings' or url == 'accounts:password_change' %}active{% endif %}"><i class="bi bi-gear-fill"></i>Settings</a>
+    {% if user.is_company_admin %}
+    <div class="bp-nav-label">Administration</div>
+    <a href="{% url 'reports:admin_dashboard' %}" class="{% if url == 'reports:admin_dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i>Admin Dashboard</a>
+    <a href="{% url 'reports:admin_members' %}" class="{% if url == 'reports:admin_members' %}active{% endif %}"><i class="bi bi-person-lines-fill"></i>Members</a>
+    <a href="{% url 'reports:admin_placements' %}" class="{% if url == 'reports:admin_placements' %}active{% endif %}"><i class="bi bi-diagram-2"></i>Placements</a>
+    <a href="{% url 'reports:admin_orders' %}" class="{% if url == 'reports:admin_orders' %}active{% endif %}"><i class="bi bi-cart-check"></i>Orders</a>
+    <a href="{% url 'reports:admin_commissions' %}" class="{% if url == 'reports:admin_commissions' %}active{% endif %}"><i class="bi bi-cash-coin"></i>Commissions</a>
+    <a href="{% url 'deposits:admin' %}" class="{% if url == 'deposits:admin' %}active{% endif %}"><i class="bi bi-box-arrow-in-down"></i>Deposits</a>
+    <a href="{% url 'reports:admin_withdrawals' %}" class="{% if url == 'reports:admin_withdrawals' %}active{% endif %}"><i class="bi bi-arrow-up-right-circle"></i>Withdrawals</a>
+    <a href="{% url 'support:admin' %}" class="{% if url == 'support:admin' %}active{% endif %}"><i class="bi bi-life-preserver"></i>Support Tickets</a>
+    <a href="{% url 'reports:admin_reports' %}" class="{% if url == 'reports:admin_reports' %}active{% endif %}"><i class="bi bi-bar-chart-line"></i>Reports</a>
+    <a href="{% url 'admin:index' %}"><i class="bi bi-sliders"></i>Products &amp; Settings</a>
+    {% endif %}
+    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="bp-logout"><i class="bi bi-box-arrow-right"></i>Logout</button></form>
+  </nav>
+</aside>
+
+<div class="bp-backdrop" id="sidebarBackdrop"></div>
+
+<div class="bp-main">
+  <header class="bp-topbar d-flex align-items-center gap-2 gap-md-3">
+    <button class="menu-btn text-white d-lg-none p-0" id="menuBtn" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <a href="{% url 'reports:dashboard' %}" class="mobile-brand d-lg-none"><span class="logo"><i class="bi bi-diagram-3-fill"></i></span><span class="d-none d-sm-inline">BinaryPro</span></a>
+    <h1 class="page-title d-none d-lg-block">{% block page_title %}{% endblock %}</h1>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <a href="{% url 'orders:cart' %}" class="icon-btn" title="Cart"><i class="bi bi-cart3"></i>
+        {% if cart_count %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">{{ cart_count }}</span>{% endif %}</a>
+      <a href="{% url 'notifications:list' %}" class="icon-btn" title="Notifications"><i class="bi bi-bell"></i>
+        {% if unread_notifications %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ unread_notifications }}</span>{% endif %}</a>
+      <div class="dropdown">
+        <button class="user-pill dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person-circle"></i><span>{{ user.first_name|default:user.username|truncatechars:12 }}</span></button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li class="dropdown-item-text small text-muted">{{ user.get_full_name|default:user.username }} · {{ user.get_role_display }}</li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
+          <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}">Change password</a></li>
+          <li><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="dropdown-item text-danger">Log out</button></form></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  <main class="bp-content">
+    {% for m in messages %}
+      <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="bp-footer">© {% now "Y" %} BinaryPro. All Rights Reserved.</footer>
+</div>
+{% endwith %}
+{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(() => {
+  const sb = document.getElementById("sidebar"), bd = document.getElementById("sidebarBackdrop"), btn = document.getElementById("menuBtn");
+  if (!sb || !btn) return;
+  const toggle = (open) => { sb.classList.toggle("show", open); bd.classList.toggle("show", open); };
+  btn.addEventListener("click", () => toggle(!sb.classList.contains("show")));
+  bd.addEventListener("click", () => toggle(false));
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

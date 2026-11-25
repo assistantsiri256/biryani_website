@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Deposits{% endblock %}
+{% block page_title %}Deposits{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    {% for v, l in statuses %}<a href="?status={{ v }}" class="btn btn-sm {% if status == v %}btn-primary{% else %}btn-light{% endif %}">{{ l }}{% if v == 'pending' and pending_count %} <span class="badge text-bg-warning">{{ pending_count }}</span>{% endif %}</a>{% endfor %}
+    <a href="?status=all" class="btn btn-sm {% if status == 'all' %}btn-primary{% else %}btn-light{% endif %}">All</a>
+    <span class="ms-auto small text-muted-2">Check each UTR and amount in your bank / UPI business app before approving.</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Date</th><th>Member</th><th>Method / Reference</th><th class="text-end">Amount</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for d in page %}
+        <tr>
+          <td class="small text-nowrap">{{ d.created_at|date:"d M Y, H:i" }}<div class="text-muted-2">{{ d.deposit_no }}</div></td>
+          <td class="small">{{ d.member.member_id }}<div class="text-muted-2">{{ d.member.get_full_name|default:d.member.username }}</div></td>
+          <td><div class="small fw-semibold">{{ d.get_method_display }}</div><code class="user-select-all small text-break">{{ d.utr }}</code></td>
+          <td class="text-end fw-semibold text-nowrap">₹{{ d.amount|floatformat:2|intcomma }}{% if d.crypto_amount %}<div class="small text-muted-2">{{ d.crypto_amount }} USDT</div>{% endif %}</td>
+          <td><span class="badge {% if d.status == 'approved' %}bg-success{% elif d.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">{{ d.get_status_display }}</span>
+            {% if d.reviewed_by %}<div class="small text-muted-2">by {{ d.reviewed_by.username }} · {{ d.reviewed_at|date:"d M, H:i" }}</div>{% endif %}
+            {% if d.admin_note %}<div class="small text-muted-2">{{ d.admin_note }}</div>{% endif %}</td>
+          <td class="text-end">
+            {% if d.status == 'pending' %}
+            <form method="post" action="{% url 'deposits:admin_action' d.pk %}" class="d-flex flex-wrap gap-1 justify-content-end">{% csrf_token %}
+              <input name="note" class="form-control form-control-sm" style="max-width:160px" placeholder="Note (optional)" maxlength="255">
+              <button name="action" value="approve" class="btn btn-sm btn-success" onclick="return confirm('Approve ₹{{ d.amount|floatformat:2 }} with UTR {{ d.utr }}? It will be added to the member\'s top-up wallet.')">Approve</button>
+              <button name="action" value="reject" class="btn btn-sm btn-outline-danger" onclick="return confirm('Reject this deposit?')">Reject</button>
+            </form>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted-2 py-5">No deposits.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</div>
+{% endblock %}

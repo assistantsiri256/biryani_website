@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Deposit{% endblock %}
+{% block page_title %}Deposit{% endblock %}
+{% block content %}
+<style>
+.upi-qr svg{max-width:100%;height:auto;display:block}
+.dep-title{display:flex;align-items:center;gap:.6rem;font-size:1.35rem;font-weight:800;padding:1.25rem 1.5rem}
+.dep-title .bi{color:#34d399;font-size:1.6rem}
+.dep-tabs{display:flex;gap:.5rem;padding:1rem 1.25rem 0}
+.dep-tabs a{flex:1;text-align:center;padding:.6rem;border-radius:12px;border:1px solid var(--bp-border-strong);color:#d4d4d8;text-decoration:none;font-weight:600}
+.dep-tabs a.active{background:linear-gradient(90deg,#ef4444,#b91c1c);color:#fff;border-color:transparent;box-shadow:0 6px 18px var(--bp-red-glow)}
+.dep-amount{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem 1.1rem;border-radius:16px;
+  background:rgba(16,185,129,.07);border:1px dashed rgba(52,211,153,.4);color:#34d399}
+.dep-amount strong{font-size:1.15rem}
+.dep-box{border:1px solid rgba(52,211,153,.18);border-radius:22px;padding:1.5rem 1.25rem;background:rgba(0,0,0,.25)}
+.dep-timer{display:inline-flex;align-items:center;gap:.45rem;padding:.45rem 1.1rem;border-radius:999px;font-weight:600;
+  background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.dep-timer.warn{background:rgba(239,68,68,.16);color:#f87171;border-color:rgba(239,68,68,.35)}
+.dep-qr{display:inline-block;background:#fff;padding:14px;border-radius:20px;width:min(100%,280px)}
+.dep-address{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;border-radius:16px;background:rgba(0,0,0,.35);border:1px solid var(--bp-border)}
+.dep-address code{color:#34d399;font-size:1rem;word-break:break-all}
+.dep-verify{padding:1rem;border-radius:16px;background:rgba(0,0,0,.3);border:1px solid var(--bp-border)}
+</style>
+
+<div class="row g-3 mb-3">
+  <div class="col-12"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-blue"><i class="bi bi-arrow-down-circle"></i></div>
+    <div><div class="stat-value">₹{{ balance|floatformat:2|intcomma }}</div><div class="stat-label">Top-up Wallet Balance</div></div></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header dep-title"><i class="bi bi-wallet-fill"></i> {% if method == 'usdt' %}USDT (BEP-20) Deposit{% elif method == 'razorpay' %}Instant Deposit{% else %}UPI Deposit{% endif %}</div>
+      <div class="dep-tabs flex-wrap">
+        {% if razorpay_enabled %}<a href="?method=razorpay" class="{% if method == 'razorpay' %}active{% endif %}"><i class="bi bi-lightning-charge"></i> Instant</a>{% endif %}
+        {% if upi_enabled %}<a href="?method=upi" class="{% if method == 'upi' %}active{% endif %}"><i class="bi bi-qr-code"></i> UPI QR</a>{% endif %}
+        {% if usdt_enabled %}<a href="?method=usdt" class="{% if method == 'usdt' %}active{% endif %}"><i class="bi bi-currency-bitcoin"></i> USDT</a>{% endif %}
+      </div>
+      <div class="card-body">
+
+      {% if method == 'razorpay' %}
+        {% if not razorpay_enabled %}
+          <div class="alert alert-warning mb-0">Instant payment is not available yet. The admin must set <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> in the <code>.env</code> file.</div>
+        {% else %}
+          <form id="rzpDepForm">{% csrf_token %}
+            <label class="form-label" for="rzpAmount">Amount to add (₹{{ min|floatformat:0 }} – ₹{{ max|floatformat:0|intcomma }})</label>
+            <div class="input-group mb-2"><span class="input-group-text">₹</span>
+              <input id="rzpAmount" name="amount" type="number" class="form-control" min="{{ min }}" max="{{ max }}" step="1" required></div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              {% for q in quick_amounts %}<button type="button" class="btn btn-sm btn-light" onclick="document.getElementById('rzpAmount').value={{ q }}">₹{{ q|intcomma }}</button>{% endfor %}
+            </div>
+            <div class="dep-amount mb-3 small"><span><i class="bi bi-shield-lock-fill"></i> UPI · Cards · Net banking · Wallets</span><strong class="fs-6">Credited instantly</strong></div>
+            <div id="rzpErr" class="text-danger small mb-2" hidden></div>
+            <button id="rzpDepBtn" class="btn btn-primary w-100"><i class="bi bi-lightning-charge"></i> Pay securely</button>
+          </form>
+          <form id="rzpDepCallback" method="post" action="{% url 'deposits:razorpay_callback' %}" hidden>{% csrf_token %}
+            <input name="razorpay_payment_id"><input name="razorpay_order_id"><input name="razorpay_signature">
+          </form>
+          <div class="small text-muted-2 mt-2 text-center"><i class="bi bi-lock"></i> Payments are processed by Razorpay. We never see your card or UPI PIN.</div>
+        {% endif %}
+      {% elif method == 'usdt' %}
+        {% if not usdt_enabled %}
+          <div class="alert alert-warning mb-0">USDT deposits are not available yet. The admin must set <code>USDT_BEP20_ADDRESS</code> in the <code>.env</code> file.</div>
+        {% elif not usdt_req %}
+          <form method="post">{% csrf_token %}
+            <input type="hidden" name="action" value="usdt_generate"><input type="hidden" name="method" value="usdt">
+            <label class="form-label" for="amount">Amount to add (₹{{ min|floatformat:0 }} – ₹{{ max|floatformat:0|intcomma }})</label>
+            <div class="input-group mb-2"><span class="input-group-text">₹</span>
+              <input id="amount" name="amount" type="number" class="form-control" min="{{ min }}" max="{{ max }}" step="1" required></div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              {% for q in quick_amounts %}<button type="button" class="btn btn-sm btn-light" onclick="document.getElementById('amount').value={{ q }}">₹{{ q|intcomma }}</button>{% endfor %}
+            </div>
+            <div class="small text-muted-2 mb-3">Rate: 1 USDT = ₹{{ usdt_rate|floatformat:2 }}</div>
+            <button class="btn btn-primary w-100"><i class="bi bi-qr-code"></i> Generate USDT QR</button>
+          </form>
+        {% elif usdt_req.deposit %}
+          <div class="alert alert-success mb-0"><i class="bi bi-check-circle"></i> This payment was verified and ₹{{ usdt_req.inr_amount|floatformat:2|intcomma }} was added to your top-up wallet.</div>
+          <a href="?method=usdt" class="small d-inline-block mt-3">← New deposit</a>
+        {% else %}
+          <div class="dep-amount mb-3">
+            <span><i class="bi bi-info-circle-fill"></i> Deposit Amount:</span>
+            <strong>{{ usdt_req.usdt_amount }} USDT (₹{{ usdt_req.inr_amount|floatformat:0|intcomma }} INR)</strong>
+          </div>
+          <div class="dep-box">
+            <div id="qrLive">
+              <div class="text-center mb-3"><span class="dep-timer"><i class="bi bi-clock-history"></i> QR Expires in: <span id="qrTimer">--:--</span></span></div>
+              <div class="text-center mb-3"><div class="dep-qr upi-qr">{{ qr|safe }}</div></div>
+              <div class="mb-2">Send exact <strong class="text-white">{{ usdt_req.usdt_amount }} USDT</strong> to BEP-20 Address:</div>
+              <div class="dep-address mb-2">
+                <code id="copyText" class="flex-grow-1">{{ usdt_req.to_address }}</code>
+                <button type="button" class="btn btn-primary btn-sm px-3 copy-btn" data-target="copyText"><i class="bi bi-clipboard"></i> <span>Copy</span></button>
+              </div>
+              <div class="dep-address mb-3">
+                <code id="copyAmt" class="flex-grow-1">{{ usdt_req.usdt_amount }}</code>
+                <button type="button" class="btn btn-light btn-sm px-3 copy-btn" data-target="copyAmt"><i class="bi bi-clipboard"></i> <span>Copy amount</span></button>
+              </div>
+              <div class="notice-box small mb-3">
+                <i class="bi bi-exclamation-triangle"></i> Send <strong>only USDT on BNB Smart Chain (BEP-20)</strong>. Send the <strong>exact amount, including the last digits</strong>, so we can match it to you. Sending from an exchange? Make sure the amount received is exact after fees.
+              </div>
+            </div>
+            <div id="qrExpired" class="text-center py-3" hidden>
+              <i class="bi bi-hourglass-bottom fs-1 text-warning"></i>
+              <div class="fw-semibold mt-2">This QR code has expired</div>
+              <div class="small text-muted-2 mb-3">Don't send to an expired QR. If you already paid before it expired, you can still verify below.</div>
+              <a href="?method=usdt" class="btn btn-primary btn-sm mb-3">Generate new QR</a>
+            </div>
+            <form method="post" class="dep-verify">{% csrf_token %}
+              <input type="hidden" name="action" value="usdt_verify"><input type="hidden" name="method" value="usdt">
+              <input type="hidden" name="req" value="{{ usdt_req.pk }}">
+              <label class="form-label small mb-2" for="txid">Enter BSC TxID / Hash ID for verification:</label>
+              <div class="d-flex gap-2">
+                <input id="txid" name="txid" class="form-control" placeholder="Paste 66-character TxID (0x…)" pattern="\s*0x[0-9a-fA-F]{64}\s*" maxlength="70" required autocomplete="off">
+                <button class="btn btn-success text-nowrap px-3">Verify TxID</button>
+              </div>
+            </form>
+          </div>
+          <a href="?method=usdt" class="small d-inline-block mt-3">← Change amount</a>
+        {% endif %}
+
+      {% else %}
+        {% if not upi_enabled %}
+          <div class="alert alert-warning mb-0">UPI deposits are not available yet. The admin must set <code>UPI_ID</code> in the <code>.env</code> file.</div>
+        {% elif not amount %}
+          <form method="get">
+            <label class="form-label" for="amount">Enter amount (₹{{ min|floatformat:0 }} – ₹{{ max|floatformat:0|intcomma }})</label>
+            <div class="input-group mb-2"><span class="input-group-text">₹</span>
+              <input id="amount" name="amount" type="number" class="form-control" min="{{ min }}" max="{{ max }}" step="1" required value="{{ request.GET.amount }}"></div>
+            {% if error %}<div class="text-danger small mb-2">{{ error }}</div>{% endif %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              {% for q in quick_amounts %}<button type="button" class="btn btn-sm btn-light" onclick="document.getElementById('amount').value={{ q }}">₹{{ q|intcomma }}</button>{% endfor %}
+            </div>
+            <button class="btn btn-primary w-100"><i class="bi bi-qr-code"></i> Generate QR</button>
+          </form>
+        {% else %}
+          <div class="dep-amount mb-3">
+            <span><i class="bi bi-info-circle-fill"></i> Deposit Amount:</span>
+            <strong>₹{{ amount|floatformat:2|intcomma }} INR</strong>
+          </div>
+          <div class="dep-box">
+            <div id="qrLive">
+              <div class="text-center mb-3"><span class="dep-timer"><i class="bi bi-clock-history"></i> QR Expires in: <span id="qrTimer">--:--</span></span></div>
+              <div class="text-center mb-3">
+                <div class="dep-qr upi-qr">{{ qr|safe }}</div>
+                <a href="{{ uri }}" class="btn btn-sm btn-outline-primary mt-3 d-lg-none"><i class="bi bi-phone"></i> Open UPI app</a>
+              </div>
+              <div class="mb-2">Send exact <strong class="text-white">₹{{ amount|floatformat:2|intcomma }}</strong> to UPI ID:</div>
+              <div class="dep-address mb-3">
+                <code id="copyText" class="flex-grow-1">{{ upi_id }}</code>
+                <button type="button" class="btn btn-primary btn-sm px-3 copy-btn" data-target="copyText"><i class="bi bi-clipboard"></i> <span>Copy</span></button>
+              </div>
+              <div class="small text-muted-2 mb-3"><i class="bi bi-person-badge"></i> Payee name: {{ upi_payee }}</div>
+              <form method="post" class="dep-verify">{% csrf_token %}
+                <input type="hidden" name="amount" value="{{ amount }}">
+                <input type="hidden" name="token" value="{{ token }}">
+                <label class="form-label small mb-2" for="utr">Enter UPI UTR / Reference No. for verification:</label>
+                <div class="d-flex gap-2">
+                  <input id="utr" name="utr" class="form-control" inputmode="numeric" pattern="\s*(\d\s*){12}" maxlength="20" placeholder="Enter 12-digit UTR" required>
+                  <button class="btn btn-success text-nowrap px-3">Verify UTR</button>
+                </div>
+              </form>
+            </div>
+            <div id="qrExpired" class="text-center py-4" hidden>
+              <i class="bi bi-hourglass-bottom fs-1 text-warning"></i>
+              <div class="fw-semibold mt-2">This QR code has expired</div>
+              <div class="small text-muted-2 mb-3">Do not pay to an expired QR. Generate a new one.</div>
+              <a href="{% url 'deposits:home' %}?amount={{ amount }}" class="btn btn-primary">Generate new QR</a>
+            </div>
+          </div>
+          <a href="{% url 'deposits:home' %}" class="small d-inline-block mt-3">← Change amount</a>
+        {% endif %}
+      {% endif %}
+      </div>
+    </div>
+    <div class="notice-box small mt-3">
+      <div class="mb-1"><strong><i class="bi bi-shield-check"></i> How it works:</strong> Instant (Razorpay) and USDT deposits are added automatically. UPI QR deposits are added after our team verifies the UTR.</div>
+      <div><strong><i class="bi bi-exclamation-triangle"></i> Note:</strong> top-up balance can only be used to buy products. It cannot be withdrawn and does not earn any income.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card mb-3">
+      <div class="card-header">Deposit history</div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for d in deposits %}
+            <tr>
+              <td class="small text-nowrap">{{ d.created_at|date:"d M Y, H:i" }}<div class="text-muted-2">{{ d.deposit_no }}</div></td>
+              <td class="small text-nowrap">{{ d.get_method_display }}</td>
+              <td class="small" title="{{ d.utr }}">{% if d.method == 'usdt' %}{{ d.utr|truncatechars:14 }}{% else %}{{ d.utr }}{% endif %}</td>
+              <td class="text-end fw-semibold text-nowrap">₹{{ d.amount|floatformat:2|intcomma }}{% if d.crypto_amount %}<div class="small text-muted-2">{{ d.crypto_amount }} USDT</div>{% endif %}</td>
+              <td><span class="badge {% if d.status == 'approved' %}bg-success{% elif d.status == 'pending' %}bg-warning{% else %}bg-secondary{% endif %}">{{ d.get_status_display }}</span>
+                {% if d.admin_note and d.method != 'usdt' %}<div class="small text-muted-2">{{ d.admin_note }}</div>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted-2 py-4">No deposits yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Top-up wallet activity</div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>Date</th><th>Description</th><th class="text-end">Amount</th></tr></thead>
+          <tbody>
+          {% for t in ledger %}
+            <tr>
+              <td class="small text-nowrap">{{ t.created_at|date:"d M Y, H:i" }}</td>
+              <td class="small">{{ t.description }}</td>
+              <td class="text-end fw-semibold {% if t.transaction_type == 'credit' %}text-earn{% else %}text-danger{% endif %}">{% if t.transaction_type == 'credit' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:2|intcomma }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="text-center text-muted-2 py-4">No activity yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{% if method == 'razorpay' and razorpay_enabled %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById("rzpDepForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget, btn = document.getElementById("rzpDepBtn"), err = document.getElementById("rzpErr");
+  btn.disabled = true; err.hidden = true;
+  try {
+    const res = await fetch("{% url 'deposits:razorpay_start' %}", { method: "POST", body: new FormData(form) });
+    const opts = await res.json();
+    if (!res.ok) throw new Error(opts.error || "Could not start payment.");
+    opts.theme = { color: "#ef2b2b" };
+    opts.handler = (r) => {
+      const f = document.getElementById("rzpDepCallback");
+      f.razorpay_payment_id.value = r.razorpay_payment_id;
+      f.razorpay_order_id.value = r.razorpay_order_id;
+      f.razorpay_signature.value = r.razorpay_signature;
+      f.submit();
+    };
+    opts.modal = { ondismiss: () => { btn.disabled = false; } };
+    new Razorpay(opts).open();
+  } catch (ex) { err.textContent = ex.message; err.hidden = false; btn.disabled = false; }
+});
+</script>
+{% endif %}
+<script>
+(() => {
+  document.querySelectorAll(".copy-btn").forEach(btn => btn.addEventListener("click", async () => {
+    const el = document.getElementById(btn.dataset.target), label = btn.querySelector("span"), old = label.textContent;
+    try { await navigator.clipboard.writeText(el.textContent.trim()); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand("copy"); }
+    label.textContent = "Copied!"; setTimeout(() => label.textContent = old, 1500);
+  }));
+  const t = document.getElementById("qrTimer");
+  if (!t) return;
+  let left = {{ expires_in|default:0 }};
+  const pill = t.closest(".dep-timer");
+  const tick = () => {
+    if (left <= 0) { document.getElementById("qrLive").hidden = true; document.getElementById("qrExpired").hidden = false; return; }
+    t.textContent = String(Math.floor(left / 60)).padStart(2, "0") + ":" + String(left % 60).padStart(2, "0");
+    pill.classList.toggle("warn", left <= 300);
+    left--; setTimeout(tick, 1000);
+  };
+  tick();
+})();
+</script>
+{% endblock %}

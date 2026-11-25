@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block page_title %}<a href="{% url 'products:list' %}" class="text-decoration-none text-muted-2">Shop</a> / {{ product.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="row g-0">
+    <div class="col-md-5"><div class="product-img h-100" style="min-height:300px;border-radius:14px 0 0 14px">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<i class="bi bi-box-seam"></i>{% endif %}</div></div>
+    <div class="col-md-7">
+      <div class="card-body p-4">
+        <div class="small text-muted-2">{{ product.category.name|default:"General" }} · SKU {{ product.sku }}</div>
+        <h2 class="h3 fw-bold">{{ product.name }}</h2>
+        <div class="d-flex align-items-baseline gap-2 mb-3">
+          <span class="h3 fw-bold mb-0">₹{{ product.price|floatformat:2|intcomma }}</span>
+          <span class="badge bg-soft-green">{{ product.sales_volume|floatformat:0 }} BV</span>
+        </div>
+        <p class="text-muted-2">{{ product.description|linebreaksbr }}</p>
+        <form method="post" action="{% url 'orders:cart_add' product.pk %}" class="d-flex gap-2" style="max-width:320px">
+          {% csrf_token %}
+          <input type="number" name="quantity" value="1" min="1" max="{{ product.max_quantity }}" class="form-control" style="max-width:90px">
+          <button class="btn btn-primary flex-grow-1" {% if not product.in_stock %}disabled{% endif %}><i class="bi bi-cart-plus"></i> Add to cart</button>
+        </form>
+        <div class="small text-muted-2 mt-2">{% if product.is_digital %}Digital product – no shipping{% else %}{{ product.stock }} in stock{% endif %}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

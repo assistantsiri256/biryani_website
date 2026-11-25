@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Business Reports{% endblock %}
+{% block content %}
+<div class="card mb-3"><div class="card-header">Sales – last 30 days</div><div class="card-body"><canvas id="sales30" height="90"></canvas></div></div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-header">Commission by type</div>
+      <ul class="list-group list-group-flush">
+        {% for t in by_type %}<li class="list-group-item d-flex justify-content-between"><span class="text-capitalize">{{ t.commission_type }} <span class="text-muted-2 small">({{ t.n }})</span></span><strong>₹{{ t.s|floatformat:2|intcomma }}</strong></li>
+        {% empty %}<li class="list-group-item text-muted-2">No commissions yet.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-header">Top earners</div>
+      <ul class="list-group list-group-flush small">
+        {% for u in top_earners %}<li class="list-group-item d-flex justify-content-between"><span><span class="fw-semibold">{{ u.member_id }}</span> · {{ u.get_full_name|default:u.username }}</span><span class="text-earn fw-semibold">₹{{ u.earned|floatformat:2|intcomma }}</span></li>
+        {% empty %}<li class="list-group-item text-muted-2">No data.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-header">Best-selling products</div>
+      <ul class="list-group list-group-flush small">
+        {% for p in top_products %}{% if p.items__product_name %}<li class="list-group-item d-flex justify-content-between"><span>{{ p.items__product_name }}</span><span class="fw-semibold">{{ p.qty }} sold</span></li>{% endif %}
+        {% empty %}<li class="list-group-item text-muted-2">No sales yet.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">Audit log (latest 30)</div>
+  <div class="table-responsive">
+    <table class="table mb-0 small align-middle">
+      <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Object</th><th>Details</th></tr></thead>
+      <tbody>
+      {% for a in audit %}
+        <tr><td class="text-nowrap">{{ a.created_at|date:"d M Y, H:i" }}</td><td>{{ a.actor.member_id|default:"system" }}</td><td><code>{{ a.action }}</code></td><td>{{ a.object_type }} {{ a.object_id }}</td><td class="text-muted-2">{% for k, v in a.details.items %}{{ k }}={{ v }} {% endfor %}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted-2 py-4">No audit entries.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const s = {{ sales_chart|safe }};
+  new Chart(document.getElementById("sales30"), {
+    type: "line",
+    data: { labels: s.labels, datasets: [{ label: "Sales (₹)", data: s.values, borderColor: "#3b82f6", backgroundColor: "rgba(59,130,246,.12)", fill: true, tension: .3 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: "#eef2f7" } }, x: { grid: { display: false } } } }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "auth_base.html" %}
+{% block title %}Register{% endblock %}
+{% block auth_title %}Create your account{% endblock %}
+{% block auth_subtitle %}Join BinaryPro with your sponsor's referral ID{% endblock %}
+{% block auth_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.under }}
+  {% if form.non_field_errors %}<div class="alert alert-danger small">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% if form.under.value %}<div class="alert alert-info small py-2">You will be placed under <strong>{{ form.under.value }}</strong>.</div>{% endif %}
+  <div class="row g-2">
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.first_name %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.last_name %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.username %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.mobile %}</div>
+    <div class="col-12">{% include "includes/field.html" with field=form.email %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.sponsor_id %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.join_as %}</div>
+    <div class="col-12" id="leg-wrap" {% if placement_mode != 'manual' %}hidden{% endif %}>{% include "includes/field.html" with field=form.leg %}</div>
+    {% if placement_mode == 'auto' %}<div class="col-12"><div class="form-text mb-3"><i class="bi bi-info-circle"></i> Distributors are placed automatically in the next available position in the sponsor's team.</div></div>
+    {% elif placement_mode == 'admin' %}<div class="col-12"><div class="form-text mb-3"><i class="bi bi-info-circle"></i> The company will assign your position in the team after registration.</div></div>{% endif %}
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.password1 %}</div>
+    <div class="col-sm-6">{% include "includes/field.html" with field=form.password2 %}</div>
+  </div>
+  <div class="form-check mb-3">
+    {{ form.agree }} <label class="form-check-label small" for="{{ form.agree.id_for_label }}">{{ form.agree.label }}</label>
+    {% for e in form.agree.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
+  <button class="btn btn-primary w-100 py-2">Create account</button>
+</form>
+<p class="text-center small mt-4 mb-0">Already registered? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+{% endblock %}
+{% block scripts %}
+<script>
+  const joinAs = document.getElementById("id_join_as"), legWrap = document.getElementById("leg-wrap");
+  const manual = "{{ placement_mode }}" === "manual";
+  const sync = () => legWrap.hidden = !(manual && joinAs.value === "distributor");
+  joinAs.addEventListener("change", sync); sync();
+</script>
+{% endblock %}

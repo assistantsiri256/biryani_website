@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>BinaryPro – प्रोजेक्ट गाइड (हिंदी)</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  @page :first { margin: 0; }
+  * { box-sizing: border-box; }
+  body { font-family: "Nirmala UI", "Mangal", "Segoe UI", sans-serif; font-size: 11.5pt; line-height: 1.65; color: #1c2533; margin: 0; }
+  h1, h2, h3 { color: #0f2a5c; line-height: 1.3; }
+  h2 { font-size: 17pt; border-bottom: 2.5px solid #1d4ed8; padding-bottom: 4px; margin: 26px 0 10px; page-break-after: avoid; }
+  h3 { font-size: 13pt; margin: 16px 0 6px; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  code, .mono { font-family: Consolas, "Courier New", monospace; font-size: 10pt; background: #eef2f8; padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: Consolas, monospace; font-size: 10pt; background: #0f1e3d; color: #e6edf7; padding: 10px 12px; border-radius: 6px; white-space: pre-wrap; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #c8d2e2; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #0f2a5c; color: #fff; font-weight: 600; }
+  tr:nth-child(even) td { background: #f5f8fc; }
+  ul, ol { margin: 6px 0 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .box { border-left: 4px solid #1d4ed8; background: #eef4ff; padding: 8px 12px; margin: 10px 0; border-radius: 0 6px 6px 0; page-break-inside: avoid; }
+  .warn { border-left-color: #c2410c; background: #fff4ec; }
+  .ok { border-left-color: #15803d; background: #effaf2; }
+  .avoid { page-break-inside: avoid; }
+  .break { page-break-before: always; }
+
+  /* Cover */
+  .cover { height: 296mm; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(160deg, #0b1f45 0%, #123a80 100%); color: #fff; padding: 0 22mm; margin: 0; page-break-after: always; }
+  .cover h1 { color: #fff; font-size: 36pt; margin: 0 0 6px; }
+  .cover .sub { font-size: 16pt; color: #bcd0ff; margin-bottom: 30px; }
+  .cover .tag { display: inline-block; border: 1px solid #6f8fd6; border-radius: 20px; padding: 3px 14px; margin: 3px 4px 3px 0; font-size: 10.5pt; color: #dce6ff; }
+  .cover .foot { margin-top: 50px; font-size: 10.5pt; color: #9fb4e0; }
+
+  /* Flow */
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; page-break-inside: avoid; }
+  .step { background: #0f2a5c; color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 10pt; text-align: center; }
+  .step small { display: block; color: #bcd0ff; font-size: 8.5pt; }
+  .arrow { color: #1d4ed8; font-weight: bold; font-size: 14pt; }
+
+  /* Tree */
+  .tree { text-align: center; margin: 12px 0; page-break-inside: avoid; }
+  .tree svg { max-width: 100%; }
+  .toc li { margin: 2px 0; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <h1>BinaryPro</h1>
+  <div class="sub">Binary Network Marketing Management System<br>प्रोजेक्ट गाइड – आसान हिंदी में</div>
+  <div>
+    <span class="tag">Django 5.2 + Python 3.11</span>
+    <span class="tag">Binary Tree</span>
+    <span class="tag">Product-based Commission</span>
+    <span class="tag">Wallet + Withdrawal</span>
+    <span class="tag">OTP + Razorpay</span>
+    <span class="tag">Admin Back-office</span>
+  </div>
+  <div class="foot">यह दस्तावेज़ बताता है कि प्रोजेक्ट क्या है, अंदर कैसे काम करता है, कैसे चलाएँ और कैसे जाँचें।</div>
+</div>
+
+<!-- ================= TOC ================= -->
+<h2>विषय-सूची</h2>
+<ol class="toc">
+  <li>प्रोजेक्ट क्या है?</li>
+  <li>यूज़र के प्रकार (Roles)</li>
+  <li>Binary Tree कैसे काम करता है</li>
+  <li>पूरा काम-काज (Flow) – Registration से Withdrawal तक</li>
+  <li>Commission कैसे बनता है – उदाहरण के साथ</li>
+  <li>Wallet और Withdrawal</li>
+  <li>Admin Panel में क्या-क्या है</li>
+  <li>Plan Settings – तीन बड़े business फैसले</li>
+  <li>Security (सुरक्षा) कैसे की गई है</li>
+  <li>प्रोजेक्ट कैसे चलाएँ (Run करें)</li>
+  <li>कैसे जाँचें कि सब सही काम कर रहा है</li>
+  <li>प्रोजेक्ट का ढाँचा (Folders / Modules)</li>
+  <li>Live (Production) करने से पहले क्या चाहिए</li>
+  <li>कानूनी (Legal) ज़रूरी बातें – भारत</li>
+</ol>
+
+<!-- ================= 1 ================= -->
+<h2>1. प्रोजेक्ट क्या है?</h2>
+<p><b>BinaryPro</b> एक वेब एप्लिकेशन है जो <b>binary network marketing (direct selling)</b> कंपनी का पूरा काम संभालता है। इसमें हर सदस्य (member) के नीचे सिर्फ़ <b>दो जगह</b> होती हैं – <b>Left</b> और <b>Right</b>। सदस्य कंपनी के products बेचते/खरीदते हैं, और उन बिक्री (sales) पर ही उन्हें commission मिलता है।</p>
+<div class="box ok"><b>सबसे ज़रूरी नियम:</b> सिर्फ़ join करने या किसी को जोड़ने पर कोई पैसा नहीं मिलता। Commission <b>केवल तभी</b> बनता है जब कोई order का <b>payment पूरा (Paid)</b> हो जाता है। इससे यह सिस्टम pyramid/money-circulation scheme से अलग रहता है।</div>
+<p>मुख्य हिस्से:</p>
+<ul>
+  <li><b>Member registration</b> – sponsor (रेफ़र करने वाले) के ज़रिए join, mobile OTP से verification</li>
+  <li><b>Binary genealogy</b> – left/right tree, अपनी पूरी team (downline) देखना</li>
+  <li><b>Shop</b> – products, cart, order, Razorpay online payment</li>
+  <li><b>Commission engine</b> – direct sale commission + binary matching commission</li>
+  <li><b>Wallet</b> – हर रुपये का हिसाब (ledger), जो कभी बदला या मिटाया नहीं जा सकता</li>
+  <li><b>Withdrawal</b> – OTP से पैसे निकालने की request, admin की मंज़ूरी के बाद payment</li>
+  <li><b>Notifications, Reports, Admin Dashboard</b></li>
+</ul>
+
+<!-- ================= 2 ================= -->
+<h2>2. यूज़र के प्रकार (Roles)</h2>
+<table>
+  <tr><th style="width:24%">Role</th><th>क्या कर सकता है</th></tr>
+  <tr><td><b>Super Admin / Company Admin</b></td><td>सारे members, orders, commissions, withdrawals देखना और मंज़ूर करना; products जोड़ना; plan settings (rates, placement mode) बदलना; reports देखना; members को tree में place करना।</td></tr>
+  <tr><td><b>Distributor</b></td><td>Binary tree में जगह पाता है। Products खरीदता है, नए लोगों को अपने referral link से जोड़ता है, अपनी team देखता है, commission कमाता है, wallet से withdrawal करता है।</td></tr>
+  <tr><td><b>Customer</b></td><td>सिर्फ़ products खरीदता है। Tree में जगह नहीं मिलती और commission नहीं कमाता। लेकिन उसकी खरीद का volume उसके sponsor के खाते में जाता है।</td></tr>
+</table>
+<p>हर यूज़र को अपने-आप एक <b>Member ID</b> मिलता है, जैसे <code>BP100001</code>। Login username या Member ID दोनों से हो सकता है।</p>
+
+<!-- ================= 3 ================= -->
+<h2 class="break">3. Binary Tree कैसे काम करता है</h2>
+<h3>3.1 Sponsor और Placement – दोनों अलग हैं</h3>
+<ul>
+  <li><b>Sponsor</b> = जिसने आपको join करवाया (आपका referral)। Direct commission इसी को मिलता है।</li>
+  <li><b>Placement (Parent)</b> = tree में आप किसके ठीक नीचे, left या right, बैठे हैं।</li>
+</ul>
+<p>ज़्यादातर बार ये एक ही व्यक्ति होते हैं, लेकिन अगर sponsor की left/right जगह भर चुकी है तो नया member नीचे कहीं खाली जगह पर जाता है – इसे <b>Spillover</b> कहते हैं। Sponsor फिर भी वही रहता है।</p>
+
+<h3>3.2 Demo Tree (A से G)</h3>
+<div class="tree">
+<svg width="560" height="230" viewBox="0 0 560 230" xmlns="http://www.w3.org/2000/svg" font-family="Nirmala UI, Segoe UI, sans-serif">
+  <g stroke="#7a8fb5" stroke-width="2" fill="none">
+    <path d="M280 48 L150 100"/><path d="M280 48 L410 100"/>
+    <path d="M150 128 L80 180"/><path d="M150 128 L220 180"/>
+    <path d="M410 128 L340 180"/><path d="M410 128 L480 180"/>
+  </g>
+  <g font-size="11" fill="#1d4ed8" text-anchor="middle">
+    <text x="200" y="70">Left</text><text x="360" y="70">Right</text>
+  </g>
+  <g text-anchor="middle" font-size="13">
+    <rect x="225" y="18" width="110" height="34" rx="7" fill="#0f2a5c"/><text x="280" y="40" fill="#fff">A – Asha (Root)</text>
+    <rect x="95" y="98" width="110" height="34" rx="7" fill="#1d4ed8"/><text x="150" y="120" fill="#fff">B – Bhavesh</text>
+    <rect x="355" y="98" width="110" height="34" rx="7" fill="#1d4ed8"/><text x="410" y="120" fill="#fff">C – Chetan</text>
+    <rect x="30" y="178" width="100" height="34" rx="7" fill="#3b6fe0"/><text x="80" y="200" fill="#fff">D – Deepa</text>
+    <rect x="170" y="178" width="100" height="34" rx="7" fill="#3b6fe0"/><text x="220" y="200" fill="#fff">E – Esha</text>
+    <rect x="290" y="178" width="100" height="34" rx="7" fill="#3b6fe0"/><text x="340" y="200" fill="#fff">F – Farhan</text>
+    <rect x="430" y="178" width="100" height="34" rx="7" fill="#3b6fe0"/><text x="480" y="200" fill="#fff">G – Gauri</text>
+  </g>
+</svg>
+</div>
+<p>A की <b>Left team</b> = B, D, E और <b>Right team</b> = C, F, G। Customer <b>Kiran</b> (sponsor: Deepa) tree में नहीं है, लेकिन उसकी खरीद का volume Deepa के node से ऊपर जाता है।</p>
+
+<h3>3.3 Spillover उदाहरण</h3>
+<p>मान लीजिए Asha किसी नए व्यक्ति को <b>Left</b> में जोड़ती है। Asha की left जगह पर पहले से Bhavesh है, तो सिस्टम Left leg में <b>सबसे नीचे</b> जाकर पहली खाली left जगह ढूँढता है (B → D → D के नीचे left)। नया member वहाँ बैठेगा, पर उसका sponsor Asha ही रहेगी।</p>
+
+<h3>3.4 Placement के तीन तरीके (Admin चुन सकता है)</h3>
+<table>
+  <tr><th style="width:22%">Mode</th><th>कैसे काम करता है</th></tr>
+  <tr><td><b>Manual</b> (default)</td><td>Join करते समय member खुद Left या Right चुनता है; जगह भरी हो तो उसी leg में नीचे spillover।</td></tr>
+  <tr><td><b>Automatic</b></td><td>सिस्टम ऊपर से नीचे, level-by-level (पहले left फिर right) अगली खाली जगह पर अपने-आप बैठा देता है।</td></tr>
+  <tr><td><b>Admin</b></td><td>नया distributor "इंतज़ार" में रहता है; Admin → <b>Placements</b> पेज से admin खुद तय करता है कि उसे कहाँ रखना है।</td></tr>
+</table>
+<div class="box"><b>दो लोग एक साथ join करें तो?</b> Database में नियम है कि एक parent की एक side (left/right) पर सिर्फ़ एक ही member हो सकता है। अगर दो registrations एक ही समय पर एक ही जगह लेने की कोशिश करें, तो एक सफल होगा और दूसरा अपने-आप अगली खाली जगह पर चला जाएगा। कभी भी दो लोग एक जगह पर नहीं बैठ सकते।</div>
+
+<!-- ================= 4 ================= -->
+<h2 class="break">4. पूरा काम-काज (Flow) – Registration से Withdrawal तक</h2>
+<div class="flow">
+  <div class="step">Register<small>sponsor ID से</small></div><span class="arrow">→</span>
+  <div class="step">Mobile OTP<small>verify</small></div><span class="arrow">→</span>
+  <div class="step">Tree में जगह<small>left / right</small></div><span class="arrow">→</span>
+  <div class="step">Shop<small>cart + order</small></div><span class="arrow">→</span>
+  <div class="step">Payment<small>Razorpay</small></div>
+</div>
+<div class="flow">
+  <span class="arrow">→</span>
+  <div class="step">Commission बने<small>Pending</small></div><span class="arrow">→</span>
+  <div class="step">Admin Release<small>wallet में</small></div><span class="arrow">→</span>
+  <div class="step">Withdrawal<small>OTP से</small></div><span class="arrow">→</span>
+  <div class="step">Admin Approve<small>Paid</small></div>
+</div>
+
+<ol>
+  <li><b>Registration:</b> नया व्यक्ति <code>/accounts/register/</code> पर sponsor का Member ID डालकर join करता है (referral link से sponsor ID अपने-आप भर जाता है)। वह Distributor या Customer चुनता है।</li>
+  <li><b>Mobile verification:</b> मोबाइल पर 6 अंकों का OTP आता है, जो 5 मिनट तक valid रहता है। Verify होने के बाद ही withdrawal संभव है।</li>
+  <li><b>Tree placement:</b> Distributor को plan के हिसाब से tree में जगह मिलती है (Manual / Auto / Admin)।</li>
+  <li><b>खरीदारी:</b> Member Shop से products cart में डालकर checkout करता है। हर product की एक कीमत (Price) और एक <b>BV (Business Volume)</b> होती है – commission BV पर बनता है।</li>
+  <li><b>Payment:</b> Razorpay से online payment। Razorpay की digital signature जाँची जाती है – नकली या दोहराया गया (duplicate) payment message स्वीकार नहीं होता। Order <b>Paid</b> होते ही stock घटता है।</li>
+  <li><b>Commission:</b> Paid होने के बाद engine चलता है और commissions <b>Pending</b> स्थिति में बनते हैं।</li>
+  <li><b>Release:</b> Admin commissions जाँचकर <b>Release</b> करता है, तब पैसा member के wallet में जुड़ता है।</li>
+  <li><b>Withdrawal:</b> Member राशि डालता है → OTP आता है → confirm करता है → request <b>Pending</b> हो जाती है और राशि wallet से रोक (hold) ली जाती है।</li>
+  <li><b>Admin action:</b> Admin <b>Approve → Paid</b> करता है (बैंक/UPI में भेजने के बाद), या <b>Reject</b> करता है – reject होने पर पैसा वापस wallet में आ जाता है।</li>
+</ol>
+<div class="box warn"><b>Refund होने पर:</b> अगर किसी order का refund होता है तो उस order से बने commissions उलट (reverse) दिए जाते हैं। अगर commission पहले ही wallet में जा चुका था, तो उतनी राशि wallet से वापस काटी जाती है।</div>
+
+<!-- ================= 5 ================= -->
+<h2 class="break">5. Commission कैसे बनता है – उदाहरण के साथ</h2>
+<p>दो तरह के commission हैं (rates admin बदल सकता है; demo में ये हैं):</p>
+<table>
+  <tr><th style="width:26%">प्रकार</th><th>नियम</th><th style="width:16%">Demo rate</th></tr>
+  <tr><td><b>Direct Sale Commission</b></td><td>जब आपका sponsor किया हुआ member (या customer) खरीदता है, तो उस order के BV का कुछ % आपको।</td><td>2%</td></tr>
+  <tr><td><b>Binary Matching Commission</b></td><td>आपकी Left team और Right team की बिक्री का BV जोड़ा जाता है। दोनों में से जो <b>कम</b> है (matched volume), उसका % आपको मिलता है।</td><td>5%</td></tr>
+</table>
+
+<h3>Binary matching – कदम दर कदम</h3>
+<ol>
+  <li>किसी ने खरीदा → उस order का BV tree में ऊपर जाता है।</li>
+  <li>हर ऊपर वाले member (upline) के लिए देखा जाता है कि खरीदार उसकी Left side में है या Right side में, और उस side के "carry" में BV जोड़ा जाता है।</li>
+  <li><b>Matched = min(Left carry, Right carry)</b></li>
+  <li>Commission = Matched × 5%, लेकिन <b>Daily Cap</b> (एक दिन की अधिकतम सीमा) से ज़्यादा नहीं।</li>
+  <li>Matched volume दोनों sides से घटा दिया जाता है; बचा हुआ volume आगे के लिए carry forward होता है।</li>
+</ol>
+
+<h3>उदाहरण (Asha के लिए)</h3>
+<table>
+  <tr><th>घटना</th><th>Left carry</th><th>Right carry</th><th>Asha को मिला</th></tr>
+  <tr><td>Bhavesh (Left) ने 1000 BV का सामान खरीदा</td><td>1000</td><td>0</td><td>Direct: 1000 × 2% = <b>₹20</b><br>Binary: अभी match नहीं (right = 0)</td></tr>
+  <tr><td>Chetan (Right) ने 800 BV का सामान खरीदा</td><td>1000</td><td>800</td><td>Direct: 800 × 2% = <b>₹16</b><br>Binary: min(1000, 800) = 800 × 5% = <b>₹40</b></td></tr>
+  <tr><td>Matching के बाद</td><td><b>200</b> (आगे जाएगा)</td><td><b>0</b></td><td>कुल: ₹76 (Pending → Release के बाद wallet में)</td></tr>
+</table>
+<div class="box"><b>Daily Cap:</b> अगर cap ₹30 है और binary commission ₹50 बन रहा है, तो उस दिन ₹30 ही मिलेगा और रिकॉर्ड पर "capped" लिखा जाएगा।</div>
+<div class="box ok"><b>एक ही payment पर दोबारा commission नहीं:</b> हर commission की एक unique key होती है। अगर payment gateway एक ही message 3 बार भी भेजे, तो commission सिर्फ़ एक बार बनेगा।</div>
+
+<!-- ================= 6 ================= -->
+<h2>6. Wallet और Withdrawal</h2>
+<h3>Wallet</h3>
+<ul>
+  <li>Wallet में हर लेन-देन (credit/debit) एक अलग entry के रूप में लिखा जाता है। कोई entry <b>कभी edit या delete नहीं होती</b>; गलती सुधारने के लिए उल्टी (reverse) entry डाली जाती है।</li>
+  <li>Balance हमेशा सारी entries जोड़कर निकाला जाता है – इसलिए हिसाब में गड़बड़ी की गुंजाइश नहीं रहती।</li>
+</ul>
+<h3>Withdrawal के नियम</h3>
+<ul>
+  <li>Mobile verified होना चाहिए।</li>
+  <li>Profile में बैंक खाता (Account number + IFSC) या UPI ID भरा होना चाहिए।</li>
+  <li>राशि न्यूनतम सीमा (demo में ₹100) से ज़्यादा और balance से कम होनी चाहिए।</li>
+  <li>हर withdrawal पर OTP ज़रूरी है।</li>
+  <li>Request बनते ही राशि hold हो जाती है → Admin approve/pay या reject करता है।</li>
+</ul>
+
+<!-- ================= 7 ================= -->
+<h2 class="break">7. Admin Panel में क्या-क्या है</h2>
+<table>
+  <tr><th style="width:24%">पेज</th><th>काम</th></tr>
+  <tr><td>Dashboard</td><td>कुल members, आज की बिक्री, pending commissions, pending withdrawals – एक नज़र में।</td></tr>
+  <tr><td>Members</td><td>सारे members की सूची, search, block/unblock।</td></tr>
+  <tr><td>Orders</td><td>Orders देखना, pending order को paid करना, cancel/refund।</td></tr>
+  <tr><td>Commissions</td><td>Pending commissions देखकर <b>Release</b> करना (wallet में भेजना)।</td></tr>
+  <tr><td>Withdrawals</td><td>Requests को Approve → Paid या Reject करना।</td></tr>
+  <tr><td>Placements</td><td>Admin placement mode में इंतज़ार कर रहे distributors को tree में रखना।</td></tr>
+  <tr><td>Network Tree</td><td>पूरी company का binary tree देखना।</td></tr>
+  <tr><td>Reports</td><td>बिक्री, commission और payout की रिपोर्ट।</td></tr>
+  <tr><td>Django Admin<br><span class="mono">/django-admin/</span></td><td>Products/categories जोड़ना, <b>Plan settings</b> बदलना, Audit log (हर ज़रूरी action का रिकॉर्ड) देखना।</td></tr>
+</table>
+
+<!-- ================= 8 ================= -->
+<h2>8. Plan Settings – तीन बड़े business फैसले</h2>
+<p>ये तीनों फैसले code बदले बिना <b>Django admin → Commissions → Plan settings</b> से बदले जा सकते हैं। हर बदलाव audit log में दर्ज होता है।</p>
+<table>
+  <tr><th style="width:22%">फैसला</th><th>विकल्प</th></tr>
+  <tr><td>1. Placement</td><td>Manual (default) · Automatic · Admin</td></tr>
+  <tr><td>2. Commission का प्रकार</td><td>दोनों (default) · सिर्फ़ Binary (direct rate = 0) · सिर्फ़ Direct (binary rate = 0)</td></tr>
+  <tr><td>3. क्या बेचा जाएगा</td><td>हर product: <b>Physical</b> (stock गिना जाता है) या <b>Digital/Service</b> (stock की सीमा नहीं) – दोनों मिलाकर भी</td></tr>
+</table>
+<p>इसके अलावा: Daily binary cap, minimum withdrawal, और "commission के लिए active purchase ज़रूरी" जैसी settings भी यहीं हैं।</p>
+<div class="box warn">Demo में दिए गए rates (2%, 5%) सिर्फ़ उदाहरण हैं। Company के approved compensation plan के हिसाब से इन्हें सेट करें।</div>
+
+<!-- ================= 9 ================= -->
+<h2 class="break">9. Security (सुरक्षा) कैसे की गई है</h2>
+<table>
+  <tr><th style="width:26%">ज़रूरत</th><th>क्या किया गया</th></tr>
+  <tr><td>Password</td><td>Password सीधे save नहीं होता, सिर्फ़ उसका सुरक्षित hash; कमज़ोर password स्वीकार नहीं।</td></tr>
+  <tr><td>OTP</td><td>6 अंक, 5 मिनट में expire; 5 गलत कोशिशों के बाद code बेकार; दोबारा माँगने में 60 सेकंड का अंतर; एक घंटे में अधिकतम 5 OTP।</td></tr>
+  <tr><td>Login पर हमला</td><td>5 गलत login के बाद 15 मिनट के लिए lock।</td></tr>
+  <tr><td>बैंक जानकारी</td><td>PAN, Account number, UPI ID database में <b>encrypted</b> (Fernet) रखे जाते हैं; स्क्रीन पर आधे छिपे (masked) दिखते हैं।</td></tr>
+  <tr><td>Payment</td><td>Razorpay signature की जाँच, राशि का मिलान, duplicate message से दोबारा credit नहीं।</td></tr>
+  <tr><td>Permissions</td><td>Member सिर्फ़ अपना wallet, अपने orders और अपनी downline देख सकता है; admin पेज सिर्फ़ admin के लिए।</td></tr>
+  <tr><td>CSRF / HTTPS</td><td>हर form पर CSRF सुरक्षा; production में HTTPS, secure cookies, HSTS अपने-आप चालू।</td></tr>
+  <tr><td>Audit trail</td><td>Registration, placement, payment, refund, release, withdrawal, plan बदलाव – सबका रिकॉर्ड।</td></tr>
+  <tr><td>Reconciliation</td><td><code>python manage.py reconcile</code> – हर commission और withdrawal का wallet से मिलान; गड़बड़ी हो तो error।</td></tr>
+  <tr><td>Secrets</td><td>कोई password/API key code में नहीं; सब <code>.env</code> से। Production में ज़रूरी keys न हों तो app शुरू ही नहीं होगा।</td></tr>
+</table>
+
+<!-- ================= 10 ================= -->
+<h2 class="break">10. प्रोजेक्ट कैसे चलाएँ (Run करें)</h2>
+<h3>हर बार चलाने के लिए</h3>
+<p>Project folder <code>d:\Vaibhav_Project\NetWorkMarketing</code> में terminal (PowerShell) खोलें:</p>
+<pre>.\venv\Scripts\activate
+python manage.py runserver</pre>
+<p>फिर browser में खोलें: <b>http://127.0.0.1:8000</b> &nbsp; (बंद करने के लिए terminal में <code>Ctrl + C</code>)</p>
+
+<h3>पहली बार (नए computer पर) setup</h3>
+<pre>py -3.11 -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+python manage.py migrate
+python manage.py seed_demo      # demo data (optional)
+python manage.py runserver</pre>
+
+<h3>ज़रूरी links</h3>
+<table>
+  <tr><th>पेज</th><th>Link</th></tr>
+  <tr><td>Login</td><td class="mono">http://127.0.0.1:8000/accounts/login/</td></tr>
+  <tr><td>नया Registration</td><td class="mono">http://127.0.0.1:8000/accounts/register/</td></tr>
+  <tr><td>Django Admin (Plan settings, Products)</td><td class="mono">http://127.0.0.1:8000/django-admin/</td></tr>
+</table>
+
+<h3>Demo Login (सबका password: <code>Demo@1234</code>)</h3>
+<table>
+  <tr><th>Username</th><th>Role</th></tr>
+  <tr><td class="mono">admin</td><td>Company Admin</td></tr>
+  <tr><td class="mono">asha</td><td>Root Distributor (tree में सबसे ऊपर)</td></tr>
+  <tr><td class="mono">bhavesh, chetan, deepa, esha, farhan, gauri</td><td>Distributors</td></tr>
+  <tr><td class="mono">kiran</td><td>Customer</td></tr>
+</table>
+<div class="box"><b>Development में OTP कहाँ मिलेगा?</b> अभी SMS नहीं भेजा जाता – OTP उसी terminal में print होता है जहाँ <code>runserver</code> चल रहा है। Live करने पर SMS provider (MSG91/Twilio) जोड़ना होगा।</div>
+
+<!-- ================= 11 ================= -->
+<h2 class="break">11. कैसे जाँचें कि सब सही काम कर रहा है</h2>
+<h3>A. Browser में हाथ से जाँच (Manual testing)</h3>
+<ol>
+  <li><b>asha</b> से login → Dashboard पर wallet balance, left/right team count, commissions दिखें।</li>
+  <li><b>Network → Tree</b> → A से G का tree दिखे; किसी member पर click करके उसकी team देखें।</li>
+  <li><b>Shop</b> → product cart में डालें → Checkout → Order पेज पर demo <b>Pay</b> बटन → order <b>Paid</b> हो और upline के commissions बनें।</li>
+  <li><b>Withdrawals</b> → ₹100 या ज़्यादा डालें → terminal से OTP लेकर डालें → request <b>Pending</b> दिखे।</li>
+  <li>Logout करके <b>admin</b> से login → Commissions release करें, Withdrawal approve/reject करें, Orders देखें।</li>
+  <li>Logout → <code>/accounts/register/</code> पर asha का Member ID डालकर नया member बनाएँ → tree में सही जगह दिखे।</li>
+  <li><b>दूसरे member का डेटा न दिखे:</b> bhavesh से login करके chetan की team खोलने की कोशिश करें → मना (403) होना चाहिए।</li>
+</ol>
+
+<h3>B. Automatic tests</h3>
+<pre>.\venv\Scripts\activate
+python manage.py test apps</pre>
+<p>अपेक्षित नतीजा: <code>Ran 51 tests ... OK (skipped=1)</code>। (1 test सिर्फ़ PostgreSQL पर चलता है – 8 लोगों का एक साथ registration।)</p>
+<p>Tests में ये सब जाँचा जाता है:</p>
+<ul>
+  <li>Placement, spillover, auto और admin placement</li>
+  <li>Commission का सही हिसाब, daily cap, refund पर reversal</li>
+  <li>Duplicate payment callback पर दोबारा credit नहीं</li>
+  <li>Withdrawal request Pending में जाती है; reject पर पैसा वापस</li>
+  <li>दूसरे का wallet/order खोलने पर मना</li>
+  <li>OTP expiry, गलत कोशिशें, rate limit; login lock</li>
+  <li>बैंक जानकारी encrypted save होती है</li>
+  <li>एक साथ registration में दो लोग एक जगह नहीं पा सकते</li>
+</ul>
+
+<h3>C. हिसाब का मिलान (Reconciliation)</h3>
+<pre>python manage.py reconcile</pre>
+<p>अपेक्षित नतीजा: <code>Reconciliation OK – no discrepancies</code></p>
+
+<!-- ================= 12 ================= -->
+<h2 class="break">12. प्रोजेक्ट का ढाँचा (Folders / Modules)</h2>
+<table>
+  <tr><th style="width:26%">Folder</th><th>काम</th></tr>
+  <tr><td class="mono">config/</td><td>Settings, URLs, Celery setup</td></tr>
+  <tr><td class="mono">apps/accounts</td><td>User, login, registration, OTP, SMS, password reset</td></tr>
+  <tr><td class="mono">apps/members</td><td>Sponsor (Referral), Profile (पता, PAN, बैंक/UPI – encrypted)</td></tr>
+  <tr><td class="mono">apps/binary_network</td><td>Binary tree, placement, spillover, team volume, tree API</td></tr>
+  <tr><td class="mono">apps/products</td><td>Products, categories, BV, stock, physical/digital</td></tr>
+  <tr><td class="mono">apps/orders</td><td>Cart, order, payment, Razorpay integration</td></tr>
+  <tr><td class="mono">apps/commissions</td><td>Plan settings, commission engine (सबसे ज़रूरी हिस्सा)</td></tr>
+  <tr><td class="mono">apps/wallet</td><td>Wallet ledger, balance</td></tr>
+  <tr><td class="mono">apps/withdrawals</td><td>Withdrawal request, OTP confirm, approve/reject</td></tr>
+  <tr><td class="mono">apps/notifications</td><td>In-app सूचनाएँ</td></tr>
+  <tr><td class="mono">apps/reports</td><td>Member dashboard, admin dashboard और reports</td></tr>
+  <tr><td class="mono">apps/core</td><td>Audit log, encryption field, seed_demo और reconcile commands</td></tr>
+  <tr><td class="mono">templates/, static/</td><td>सारे HTML पेज और CSS (dark-blue sidebar वाला design)</td></tr>
+</table>
+<p><b>Technology:</b> Python 3.11, Django 5.2, Django REST Framework, SQLite (development) / PostgreSQL (production), Redis + Celery (background jobs, optional), Razorpay, cryptography (encryption)।</p>
+
+<!-- ================= 13 ================= -->
+<h2>13. Live (Production) करने से पहले क्या चाहिए</h2>
+<ul>
+  <li><b>Server:</b> PostgreSQL database, Redis, Celery worker, Gunicorn + Nginx, HTTPS (SSL certificate), domain name।</li>
+  <li><b>.env में:</b> <code>DEBUG=False</code>, <code>SECRET_KEY</code>, <code>FIELD_ENCRYPTION_KEYS</code>, <code>ALLOWED_HOSTS</code>, <code>CSRF_TRUSTED_ORIGINS</code>।</li>
+  <li><b>Razorpay:</b> Key ID, Key Secret, Webhook Secret; Razorpay dashboard में webhook URL <code>https://&lt;domain&gt;/orders/webhooks/razorpay/</code>।</li>
+  <li><b>SMS provider</b> (MSG91 / Twilio) OTP के लिए, और email के लिए SMTP।</li>
+  <li><b>Backup:</b> रोज़ database का encrypted backup; encryption key का अलग सुरक्षित backup – <b>key खो गई तो बैंक जानकारी कभी नहीं पढ़ी जा सकेगी।</b></li>
+  <li><b>रोज़ाना</b> <code>reconcile</code> command चलाना (cron job)।</li>
+  <li>Demo passwords बदलें / demo data हटाएँ।</li>
+  <li><b>अभी बाकी:</b> KYC document upload और approval; ज़रूरत हो तो TDS / admin charge कटौती।</li>
+</ul>
+
+<!-- ================= 14 ================= -->
+<h2>14. कानूनी (Legal) ज़रूरी बातें – भारत</h2>
+<p>भारत में <b>Consumer Protection (Direct Selling) Rules, 2021</b> (2023 में संशोधित) लागू हैं, जो pyramid scheme और money-circulation scheme पर रोक लगाते हैं। Live करने से पहले company को:</p>
+<ul>
+  <li>किसी योग्य भारतीय वकील से compensation plan की जाँच करवानी चाहिए।</li>
+  <li>पैसा केवल असली product बिक्री पर देना चाहिए (यह software join करने पर कभी पैसा नहीं देता)।</li>
+  <li>Direct seller agreement, consumer को पूरी जानकारी, शिकायत निवारण (grievance) व्यवस्था और refund प्रक्रिया रखनी चाहिए।</li>
+  <li>किसी को guaranteed income का वादा नहीं करना चाहिए, और ज़रूरी registrations रखने चाहिए।</li>
+</ul>
+<div class="box warn">यह software binary structure को support करता है, लेकिन सिर्फ़ इससे कोई compensation plan कानूनी नहीं हो जाता। अंतिम कानूनी सलाह वकील से ही लें।</div>
+
+</body>
+</html>

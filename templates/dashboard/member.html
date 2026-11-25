@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+{% if not user.is_verified %}
+<div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-shield-exclamation"></i><span class="flex-grow-1">Your email address is not verified. Verification is required before withdrawals.</span><a href="{% url 'accounts:verify_mobile' %}" class="btn btn-sm btn-warning">Verify now</a></div>
+{% endif %}
+<div class="card welcome-card mb-3">
+  <div class="card-body p-4 d-flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1">
+      <div class="text-white-50 small">Welcome back,</div>
+      <h2 class="h4 fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h2>
+      <div class="small"><span class="badge bg-light text-dark me-1">{{ user.member_id }}</span><span class="text-white-50">{{ user.get_role_display }} · Sponsor: {{ user.referral_record.sponsor.member_id|default:"—" }}</span></div>
+    </div>
+    <div class="text-end">
+      <div class="text-white-50 small">Wallet balance</div>
+      <div class="h3 fw-bold mb-0">₹{{ summary.balance|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6 col-xl-3"><a href="{% url 'wallet:home' %}" class="text-decoration-none"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-red"><i class="bi bi-wallet2"></i></div>
+    <div><div class="stat-value">₹{{ summary.balance|floatformat:2|intcomma }}</div><div class="stat-label">Main Wallet Balance</div></div></div></div></a></div>
+  <div class="col-md-6 col-xl-3"><a href="{% url 'deposits:home' %}" class="text-decoration-none"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-blue"><i class="bi bi-arrow-down-circle"></i></div>
+    <div><div class="stat-value">₹{{ topup_balance|floatformat:2|intcomma }}</div><div class="stat-label">Top-up Wallet Balance</div></div></div></div></a></div>
+  <div class="col-md-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-green"><i class="bi bi-graph-up-arrow"></i></div>
+    <div><div class="stat-value">₹{{ summary.total_earned|floatformat:2|intcomma }}</div><div class="stat-label">Total Earned</div></div></div></div></div>
+  <div class="col-md-6 col-xl-3"><a href="{% url 'withdrawals:list' %}" class="text-decoration-none"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-purple"><i class="bi bi-arrow-up-right-circle"></i></div>
+    <div><div class="stat-value">₹{{ summary.total_withdrawn|floatformat:2|intcomma }}</div><div class="stat-label">Total Withdrawn</div></div></div></div></a></div>
+</div>
+
+{% if vol %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center">
+    <div class="stat-icon bg-soft-blue"><i class="bi bi-people-fill"></i></div>
+    <div><div class="stat-value">{{ vol.left_count|add:vol.right_count }}</div><div class="stat-label">Total team</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center">
+    <div class="stat-icon bg-soft-purple"><i class="bi bi-arrow-left-circle-fill"></i></div>
+    <div><div class="stat-value">{{ vol.left_count }}</div><div class="stat-label">Left team</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center">
+    <div class="stat-icon bg-soft-orange"><i class="bi bi-arrow-right-circle-fill"></i></div>
+    <div><div class="stat-value">{{ vol.right_count }}</div><div class="stat-label">Right team</div></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex gap-3 align-items-center">
+    <div class="stat-icon bg-soft-green"><i class="bi bi-person-plus-fill"></i></div>
+    <div><div class="stat-value">{{ direct_count }}</div><div class="stat-label">Direct referrals</div></div></div></div></div>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  {% if vol %}
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">Sales volume by leg</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0 align-middle">
+          <thead><tr><th></th><th class="text-end">Left</th><th class="text-end">Right</th></tr></thead>
+          <tbody>
+            <tr><td class="text-muted-2">Lifetime volume</td><td class="text-end fw-semibold">₹{{ vol.total_left|floatformat:0|intcomma }}</td><td class="text-end fw-semibold">₹{{ vol.total_right|floatformat:0|intcomma }}</td></tr>
+            <tr><td class="text-muted-2">Unmatched (carry forward)</td><td class="text-end">₹{{ vol.left_carry|floatformat:0|intcomma }}</td><td class="text-end">₹{{ vol.right_carry|floatformat:0|intcomma }}</td></tr>
+            <tr><td class="text-muted-2">Matched volume</td><td class="text-end" colspan="2">₹{{ vol.total_matched|floatformat:0|intcomma }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="{% if vol %}col-lg-7{% else %}col-12{% endif %}">
+    <div class="card h-100">
+      <div class="card-header d-flex"><span>Earnings – last 14 days</span></div>
+      <div class="card-body"><canvas id="earnChart" height="140"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="stat-label">Available balance</div><div class="stat-value text-earn">₹{{ summary.balance|floatformat:2|intcomma }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="stat-label">Pending commission</div><div class="stat-value">₹{{ summary.pending|floatformat:2|intcomma }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="stat-label">Total earned</div><div class="stat-value">₹{{ summary.total_earned|floatformat:2|intcomma }}</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="card-body"><div class="stat-label">Total withdrawn</div><div class="stat-value">₹{{ summary.total_withdrawn|floatformat:2|intcomma }}</div></div></div></div>
+</div>
+
+<div class="row g-3">
+  {% if user.binary_node %}
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">Your referral links</div>
+      <div class="card-body">
+        <label class="small text-muted-2">Join on your <strong>left</strong> team</label>
+        <div class="input-group mb-3"><input class="form-control form-control-sm" id="refL" value="{{ referral_left }}" readonly><button class="btn btn-outline-primary btn-sm" onclick="copyRef('refL', this)"><i class="bi bi-clipboard"></i> Copy</button></div>
+        <label class="small text-muted-2">Join on your <strong>right</strong> team</label>
+        <div class="input-group"><input class="form-control form-control-sm" id="refR" value="{{ referral_right }}" readonly><button class="btn btn-outline-primary btn-sm" onclick="copyRef('refR', this)"><i class="bi bi-clipboard"></i> Copy</button></div>
+        <p class="small text-muted-2 mt-3 mb-0">New distributors are placed at the bottom of the chosen leg (spillover).</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="{% if user.binary_node %}col-lg-7{% else %}col-12{% endif %}">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between"><span>Recent transactions</span><a href="{% url 'wallet:home' %}" class="small">View all</a></div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <tbody>
+          {% for t in recent_txs %}
+            <tr><td><div class="small fw-semibold">{{ t.description|default:t.reference }}</div><div class="small text-muted-2">{{ t.created_at|date:"d M Y, H:i" }}</div></td>
+              <td class="text-end fw-semibold {% if t.transaction_type == 'credit' %}text-earn{% else %}text-danger{% endif %}">{% if t.transaction_type == 'credit' %}+{% else %}−{% endif %}₹{{ t.amount|floatformat:2|intcomma }}</td></tr>
+          {% empty %}
+            <tr><td class="text-center text-muted-2 py-4">No transactions yet. Commissions appear here after product sales in your team are confirmed.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const d = {{ earnings_chart|safe }};
+  new Chart(document.getElementById("earnChart"), {
+    type: "bar",
+    data: { labels: d.labels, datasets: [{ label: "Commission (₹)", data: d.values, backgroundColor: "#22c55e", borderRadius: 6, maxBarThickness: 28 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: "#eef2f7" } }, x: { grid: { display: false } } } }
+  });
+  function copyRef(id, btn) {
+    navigator.clipboard.writeText(document.getElementById(id).value);
+    btn.innerHTML = '<i class="bi bi-check2"></i> Copied'; setTimeout(() => btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy', 1500);
+  }
+</script>
+{% endblock %}

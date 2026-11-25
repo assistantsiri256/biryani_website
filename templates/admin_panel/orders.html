@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Orders{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex flex-wrap gap-2">
+    <a href="?" class="btn btn-sm {% if not status %}btn-primary{% else %}btn-light{% endif %}">All</a>
+    {% for v, l in statuses %}<a href="?status={{ v }}" class="btn btn-sm {% if status == v %}btn-primary{% else %}btn-light{% endif %}">{{ l }}</a>{% endfor %}
+    <a href="?status=upi" class="btn btn-sm {% if status == 'upi' %}btn-primary{% else %}btn-light{% endif %}"><i class="bi bi-qr-code"></i> Awaiting UPI confirmation{% if upi_waiting %} <span class="badge text-bg-warning">{{ upi_waiting }}</span>{% endif %}</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="text-end">Amount</th><th class="text-end">BV</th><th>Status</th><th>Commission</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+      {% for o in page %}
+        <tr>
+          <td><a href="{{ o.get_absolute_url }}" class="fw-semibold text-decoration-none">{{ o.order_number }}</a></td>
+          <td class="small">{{ o.customer.member_id }}<div class="text-muted-2">{{ o.customer.get_full_name|default:o.customer.username }}</div></td>
+          <td class="small">{{ o.created_at|date:"d M Y, H:i" }}</td>
+          <td class="text-end">₹{{ o.total_amount|floatformat:2|intcomma }}</td>
+          <td class="text-end">{{ o.total_volume|floatformat:0 }}</td>
+          <td>{% include "includes/order_status.html" with status=o.status label=o.get_status_display %}
+            {% if o.status == 'pending' and o.upi_pending %}{% with t=o.upi_pending.0 %}<div class="small mt-1"><i class="bi bi-qr-code"></i> UTR <code class="user-select-all">{{ t.gateway_reference }}</code><div class="text-muted-2">{{ t.created_at|date:"d M, H:i" }}</div></div>{% endwith %}{% endif %}</td>
+          <td class="small">{% if o.commission_processed %}<i class="bi bi-check-circle-fill text-success"></i> Calculated{% else %}—{% endif %}</td>
+          <td class="text-end text-nowrap">
+            <form method="post" action="{% url 'reports:admin_order_action' o.order_number %}" class="d-inline">
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              {% if o.status == 'pending' and o.upi_pending %}
+                <button name="action" value="confirm_upi" class="btn btn-sm btn-success" onclick="return confirm('Confirm you received ₹{{ o.total_amount|floatformat:2 }} with UTR {{ o.upi_pending.0.gateway_reference }}?')">Confirm UPI</button>
+                <button name="action" value="reject_upi" class="btn btn-sm btn-outline-danger" onclick="return confirm('Reject this UPI payment? The customer will be asked to resubmit.')">Reject</button>
+              {% elif o.status == 'pending' %}
+                <button name="action" value="mark_paid" class="btn btn-sm btn-success">Mark paid</button>
+                <button name="action" value="cancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
+              {% elif o.status == 'paid' %}
+                <button name="action" value="refund" class="btn btn-sm btn-outline-danger" onclick="return confirm('Refund this order and reverse all its commissions?')">Refund</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="8" class="text-center text-muted-2 py-4">No orders.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</div>
+{% endblock %}

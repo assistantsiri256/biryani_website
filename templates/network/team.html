@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Team{% endblock %}
+{% block page_title %}My Team{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-md-6"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-red"><i class="bi bi-person-hearts"></i></div>
+    <div><div class="stat-value">{{ total }}</div><div class="stat-label">Total Team</div></div></div></div></div>
+  <div class="col-md-6"><div class="card stat-card h-100"><div class="card-body">
+    <div class="stat-icon bg-soft-purple"><i class="bi bi-people"></i></div>
+    <div><div class="stat-value">{{ active }}</div><div class="stat-label">Active Members</div></div></div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap align-items-center gap-2">
+    <span>Team List</span><span class="badge bg-warning">Level {{ current }}</span>
+  </div>
+  {% if levels|length > 1 %}
+  <div class="px-3 pt-3 d-flex flex-wrap gap-2">
+    {% for l in levels %}
+      <a href="?level={{ l.n }}" class="btn btn-sm {% if l.n == current %}btn-primary{% else %}btn-light{% endif %}">Level {{ l.n }} <span class="opacity-75">({{ l.count }})</span></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>#</th><th>Name</th><th>User ID</th><th>Mobile</th><th>Sponsor</th><th>Status</th><th>Joining Date</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="text-muted-2">{{ forloop.counter }}</td>
+          <td class="fw-semibold text-nowrap">{{ r.member.get_full_name|default:r.member.username }}</td>
+          <td>{{ r.member.member_id }}</td>
+          <td class="text-nowrap">{{ r.mobile_display|default:"—" }}</td>
+          <td>{{ r.sponsor.member_id }}</td>
+          <td>{% if r.member.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+          <td class="small text-nowrap">{{ r.created_at|date:"d M Y" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-muted-2 py-5">No members found in this list.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

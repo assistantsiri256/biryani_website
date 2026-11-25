@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% block title %}Login{% endblock %}
+{% block auth_title %}Welcome back{% endblock %}
+{% block auth_subtitle %}Sign in to your BinaryPro account{% endblock %}
+{% block auth_content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger small">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  {% include "includes/field.html" with field=form.username %}
+  {% include "includes/field.html" with field=form.password %}
+  <div class="d-flex justify-content-end mb-3"><a href="{% url 'accounts:password_reset' %}" class="small">Forgot password?</a></div>
+  <button class="btn btn-primary w-100 py-2">Sign in</button>
+</form>
+<p class="text-center small mt-4 mb-0">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+{% endblock %}

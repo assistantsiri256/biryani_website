@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block page_title %}Profile &amp; KYC{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="avatar-lg mb-2">{{ user.first_name|first|default:user.username|first|upper }}</div>
+        <h2 class="h5 mb-0">{{ user.get_full_name|default:user.username }}</h2>
+        <div class="text-muted small">{{ user.member_id }} · {{ user.get_role_display }}</div>
+        <hr>
+        <dl class="row small text-start mb-0">
+          <dt class="col-5 text-muted fw-normal">Mobile</dt><dd class="col-7">{{ user.mobile|default:"—" }}</dd>
+          <dt class="col-5 text-muted fw-normal">Sponsor</dt><dd class="col-7">{{ user.referral_record.sponsor.member_id|default:"—" }}</dd>
+          <dt class="col-5 text-muted fw-normal">Placement</dt><dd class="col-7">{% if user.binary_node %}{{ user.binary_node.parent.member.member_id|default:"Root" }} {% if user.binary_node.position %}({{ user.binary_node.get_position_display }}){% endif %}{% else %}—{% endif %}</dd>
+          <dt class="col-5 text-muted fw-normal">KYC</dt><dd class="col-7"><span class="badge {% if profile.kyc_status == 'approved' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ profile.get_kyc_status_display }}</span></dd>
+          <dt class="col-5 text-muted fw-normal">Joined</dt><dd class="col-7">{{ user.created_at|date:"d M Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <form method="post" class="card">
+      {% csrf_token %}
+      <div class="card-header">Personal details</div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-6">{% include "includes/field.html" with field=form.first_name %}</div>
+          <div class="col-md-6">{% include "includes/field.html" with field=form.last_name %}</div>
+          <div class="col-12">{% include "includes/field.html" with field=form.email %}</div>
+          <div class="col-12">{% include "includes/field.html" with field=form.address %}</div>
+          <div class="col-md-4">{% include "includes/field.html" with field=form.city %}</div>
+          <div class="col-md-4">{% include "includes/field.html" with field=form.state %}</div>
+          <div class="col-md-4">{% include "includes/field.html" with field=form.pincode %}</div>
+          <div class="col-md-6">{% include "includes/field.html" with field=form.pan_number %}</div>
+        </div>
+        <h3 class="h6 mt-3 mb-3 fw-semibold">Payout details <span class="text-muted small fw-normal">(bank account or UPI, needed for withdrawals)</span></h3>
+        <div class="row g-2">
+          <div class="col-md-6">{% include "includes/field.html" with field=form.bank_account_name %}</div>
+          <div class="col-md-6">{% include "includes/field.html" with field=form.bank_account_number %}</div>
+          <div class="col-md-6">{% include "includes/field.html" with field=form.bank_ifsc %}</div>
+          <div class="col-md-6">{% include "includes/field.html" with field=form.upi_id %}</div>
+        </div>
+      </div>
+      <div class="card-footer text-end"><button class="btn btn-primary">Save changes</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

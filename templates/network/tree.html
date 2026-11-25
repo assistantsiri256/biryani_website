@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Binary Tree{% endblock %}
+{% block page_title %}Binary Genealogy{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+    <form id="searchForm" class="d-flex gap-2 flex-grow-1" style="max-width:420px">
+      <input id="searchId" class="form-control" placeholder="Search member ID, e.g. BP100004">
+      <button class="btn btn-primary"><i class="bi bi-search"></i></button>
+    </form>
+    <div class="btn-group">
+      <button class="btn btn-light" id="btnTop" title="Back to my position"><i class="bi bi-house"></i> My tree</button>
+      <button class="btn btn-light" id="btnUp" title="Go up one level"><i class="bi bi-arrow-up"></i> Up</button>
+    </div>
+    <select id="depth" class="form-select w-auto">
+      <option value="2">2 levels</option><option value="3" selected>3 levels</option><option value="4">4 levels</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div id="treeMsg" class="text-center text-muted-2 py-5">Loading tree…</div>
+    <div class="tree-scroll"><div class="btree" id="tree"></div></div>
+    <div class="small text-muted-2 text-center">Click a member to view details · Click <i class="bi bi-plus-circle"></i> on an empty slot to copy a registration link for that position</div>
+  </div>
+</div>
+
+<div class="modal fade" id="memberModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="mTitle"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="mBody"></div>
+      <div class="modal-footer"><button class="btn btn-primary" id="mView">View this member's tree</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const API = "{% url 'network:tree_api' %}";
+  const REG = "{{ request.scheme }}://{{ request.get_host }}{% url 'accounts:register' %}";
+  const ME = "{{ user.member_id }}";
+  const el = document.getElementById("tree"), msg = document.getElementById("treeMsg");
+  const modal = new bootstrap.Modal(document.getElementById("memberModal"));
+  let current = "", parentId = null;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const initials = n => esc(n.split(" ").map(x => x[0] || "").join("").slice(0, 2).toUpperCase());
+
+  function nodeHtml(n, isRoot, parentMid, leg) {
+    if (!n) {
+      return `<li><div class="leg-tag">${leg}</div><div class="tnode empty" data-empty="${esc(parentMid)}" data-leg="${leg}">
+        <div class="avatar"><i class="bi bi-plus-circle"></i></div><div class="small">Empty</div></div></li>`;
+    }
+    const kids = n.children && (n.children.left !== undefined || n.children.right !== undefined);
+    let html = `<li>${isRoot ? "" : `<div class="leg-tag">${esc(n.position)}</div>`}
+      <div class="tnode ${isRoot ? "root" : ""} ${n.active ? "" : "inactive"}" data-mid="${esc(n.member_id)}">
+        <div class="avatar">${initials(n.name)}</div>
+        <div class="mid">${esc(n.member_id)}</div><div class="nm">${esc(n.name)}</div>
+        <div class="lr text-muted-2">L ${n.left_count} · R ${n.right_count}</div>
+        ${n.has_more ? `<div class="more"><i class="bi bi-chevron-double-down"></i> more</div>` : ""}
+      </div>`;
+    if (kids) {
+      html += `<ul>${nodeHtml(n.children.left, false, n.member_id, "left")}${nodeHtml(n.children.right, false, n.member_id, "right")}</ul>`;
+    }
+    return html + "</li>";
+  }
+
+  const cache = {};
+  async function load(mid) {
+    msg.hidden = false; msg.textContent = "Loading tree…"; el.innerHTML = "";
+    const depth = document.getElementById("depth").value;
+    const res = await fetch(`${API}?depth=${depth}${mid ? "&member_id=" + encodeURIComponent(mid) : ""}`, { headers: { Accept: "application/json" } });
+    const data = await res.json();
+    if (!res.ok) { msg.textContent = data.detail || "Could not load tree."; return; }
+    msg.hidden = true;
+    current = data.member_id; parentId = data.parent_member_id;
+    (function walk(n) { if (!n) return; cache[n.member_id] = n; Object.values(n.children || {}).forEach(walk); })(data);
+    el.innerHTML = `<ul>${nodeHtml(data, true)}</ul>`;
+    document.getElementById("btnUp").disabled = !parentId;
+  }
+
+  el.addEventListener("click", e => {
+    const empty = e.target.closest("[data-empty]");
+    if (empty) {
+      const link = `${REG}?ref=${encodeURIComponent(ME)}&leg=${empty.dataset.leg}&under=${encodeURIComponent(empty.dataset.empty)}`;
+      navigator.clipboard.writeText(link).then(() => alertTip(empty, "Link copied"));
+      return;
+    }
+    const node = e.target.closest("[data-mid]");
+    if (!node) return;
+    const n = cache[node.dataset.mid];
+    if (n.has_more) { load(n.member_id); return; }
+    document.getElementById("mTitle").textContent = `${n.member_id} · ${n.name}`;
+    document.getElementById("mBody").innerHTML = `
+      <dl class="row mb-0 small">
+        <dt class="col-5 text-muted fw-normal">Status</dt><dd class="col-7">${n.active ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</dd>
+        <dt class="col-5 text-muted fw-normal">Position</dt><dd class="col-7">${esc(n.position || "Top")}</dd>
+        <dt class="col-5 text-muted fw-normal">Joined</dt><dd class="col-7">${esc(n.joined)}</dd>
+        <dt class="col-5 text-muted fw-normal">Left team</dt><dd class="col-7">${n.left_count} members · ₹${esc(n.total_left)} volume</dd>
+        <dt class="col-5 text-muted fw-normal">Right team</dt><dd class="col-7">${n.right_count} members · ₹${esc(n.total_right)} volume</dd>
+      </dl>`;
+    document.getElementById("mView").onclick = () => { modal.hide(); load(n.member_id); };
+    modal.show();
+  });
+
+  function alertTip(node, text) {
+    const old = node.innerHTML; node.innerHTML = `<div class="small text-success py-3"><i class="bi bi-check2"></i> ${text}</div>`;
+    setTimeout(() => node.innerHTML = old, 1400);
+  }
+
+  document.getElementById("searchForm").addEventListener("submit", e => { e.preventDefault(); const v = document.getElementById("searchId").value.trim(); if (v) load(v); });
+  document.getElementById("btnTop").onclick = () => load("");
+  document.getElementById("btnUp").onclick = () => parentId && load(parentId);
+  document.getElementById("depth").onchange = () => load(current);
+  load(new URLSearchParams(location.search).get("member") || "");
+})();
+</script>
+{% endblock %}

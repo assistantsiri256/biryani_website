@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Commissions{% endblock %}
+{% block page_title %}Commissions{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card stat-card"><div class="card-body"><div class="stat-label">Pending (liability)</div><div class="stat-value">₹{{ totals.pending.s|default:0|floatformat:2|intcomma }}</div><div class="small text-muted-2">{{ totals.pending.n|default:0 }} entries</div></div></div></div>
+  <div class="col-md-4"><div class="card stat-card"><div class="card-body"><div class="stat-label">Released to wallets</div><div class="stat-value text-earn">₹{{ totals.released.s|default:0|floatformat:2|intcomma }}</div><div class="small text-muted-2">{{ totals.released.n|default:0 }} entries</div></div></div></div>
+  <div class="col-md-4"><div class="card stat-card"><div class="card-body"><div class="stat-label">Reversed (refunds)</div><div class="stat-value text-danger">₹{{ totals.reversed.s|default:0|floatformat:2|intcomma }}</div><div class="small text-muted-2">{{ totals.reversed.n|default:0 }} entries</div></div></div></div>
+</div>
+
+<form method="post" action="{% url 'reports:admin_release_commissions' %}" class="card">
+  {% csrf_token %}
+  <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+    <a href="?status=pending" class="btn btn-sm {% if status == 'pending' %}btn-primary{% else %}btn-light{% endif %}">Pending</a>
+    <a href="?status=released" class="btn btn-sm {% if status == 'released' %}btn-primary{% else %}btn-light{% endif %}">Released</a>
+    <a href="?status=reversed" class="btn btn-sm {% if status == 'reversed' %}btn-primary{% else %}btn-light{% endif %}">Reversed</a>
+    <a href="?status=" class="btn btn-sm {% if not status %}btn-primary{% else %}btn-light{% endif %}">All</a>
+    {% if status == 'pending' and page.paginator.count %}
+      <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-sm btn-outline-success">Release selected</button>
+        <button class="btn btn-sm btn-success" name="all" value="1" onclick="document.querySelectorAll('.csel').forEach(c => c.checked = false); return confirm('Release ALL pending commissions to member wallets?')">Release all pending</button>
+      </div>
+    {% endif %}
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th></th><th>Date</th><th>Member</th><th>Type</th><th>Order</th><th class="text-end">Volume</th><th class="text-end">Rate</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for c in page %}
+        <tr>
+          <td>{% if c.status == 'pending' %}<input type="checkbox" name="ids" value="{{ c.pk }}" class="form-check-input csel">{% endif %}</td>
+          <td class="small">{{ c.created_at|date:"d M Y, H:i" }}</td>
+          <td class="small fw-semibold">{{ c.member.member_id }}</td>
+          <td class="small">{{ c.get_commission_type_display }}{% if c.capped %} <span class="badge bg-light text-dark">capped</span>{% endif %}</td>
+          <td class="small">{{ c.order.order_number }}</td>
+          <td class="text-end small">{{ c.volume|floatformat:0 }}</td>
+          <td class="text-end small">{{ c.rate }}%</td>
+          <td class="text-end fw-semibold">₹{{ c.amount|floatformat:2|intcomma }}</td>
+          <td>{% include "includes/order_status.html" with status=c.status label=c.get_status_display %}</td>
+        </tr>
+      {% empty %}<tr><td colspan="9" class="text-center text-muted-2 py-4">No commissions.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pager.html" %}
+</form>
+{% endblock %}

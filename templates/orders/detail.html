@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Order {{ order.order_number }}{% endblock %}
+{% block page_title %}Order {{ order.order_number }}{% endblock %}
+{% block content %}
+<style>.upi-qr svg{max-width:100%;height:auto;display:block}</style>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Invoice</span>{% include "includes/order_status.html" with status=order.status label=order.get_status_display %}
+      </div>
+      <div class="card-body">
+        <div class="row small mb-3">
+          <div class="col-sm-6"><div class="text-muted-2">Billed to</div><div class="fw-semibold">{{ order.customer.get_full_name|default:order.customer.username }} ({{ order.customer.member_id }})</div><div>{{ order.shipping_address|linebreaksbr }}</div></div>
+          <div class="col-sm-6 text-sm-end"><div class="text-muted-2">Order date</div><div>{{ order.created_at|date:"d M Y, H:i" }}</div>{% if order.paid_at %}<div class="text-muted-2 mt-1">Paid on</div><div>{{ order.paid_at|date:"d M Y, H:i" }}</div>{% endif %}</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Item</th><th class="text-end">Price</th><th class="text-end">Qty</th><th class="text-end">BV</th><th class="text-end">Total</th></tr></thead>
+            <tbody>
+            {% for i in order.items.all %}
+              <tr><td>{{ i.product_name }}</td><td class="text-end">₹{{ i.unit_price|floatformat:2|intcomma }}</td><td class="text-end">{{ i.quantity }}</td><td class="text-end">{{ i.line_volume|floatformat:0 }}</td><td class="text-end">₹{{ i.line_total|floatformat:2|intcomma }}</td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot><tr><th colspan="3"></th><th class="text-end">{{ order.total_volume|floatformat:0 }} BV</th><th class="text-end h5">₹{{ order.total_amount|floatformat:2|intcomma }}</th></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    {% if order.status == 'pending' and order.customer == user %}
+    <div class="card mb-3">
+      <div class="card-header">Payment</div>
+      <div class="card-body">
+        {% if not upi_pending %}
+        <div class="notice-box mb-3">
+          <div class="d-flex justify-content-between small mb-2"><span>Top-up wallet balance</span><strong>₹{{ topup_balance|floatformat:2|intcomma }}</strong></div>
+          {% if topup_balance >= order.total_amount %}
+          <form method="post" action="{% url 'deposits:pay_order' order.order_number %}">{% csrf_token %}
+            <button class="btn btn-primary w-100" onclick="return confirm('Pay ₹{{ order.total_amount|floatformat:2 }} from your top-up wallet?')"><i class="bi bi-wallet2"></i> Pay ₹{{ order.total_amount|floatformat:2|intcomma }} from Top-up Wallet</button>
+          </form>
+          {% else %}
+          <a href="{% url 'deposits:home' %}" class="btn btn-sm btn-light w-100"><i class="bi bi-plus-circle"></i> Not enough balance. Deposit money</a>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if upi_enabled %}
+          {% if upi_pending %}
+          <div class="alert alert-info small mb-3">
+            <i class="bi bi-hourglass-split"></i> <strong>Payment under verification</strong><br>
+            UTR <code>{{ upi_pending.gateway_reference }}</code> submitted on {{ upi_pending.created_at|date:"d M Y, H:i" }}.
+            Your order will be confirmed once we verify it.
+          </div>
+          {% else %}
+          <div class="text-center mb-2">
+            <div class="fw-semibold mb-1">Scan &amp; pay with any UPI app</div>
+            <div class="d-inline-block bg-white p-2 rounded border upi-qr">{{ upi_qr|safe }}</div>
+            <div class="h5 mt-2 mb-0">₹{{ order.total_amount|floatformat:2|intcomma }}</div>
+            <div class="small text-muted-2">{{ upi_payee }} · <span class="user-select-all">{{ upi_id }}</span></div>
+            <a href="{{ upi_uri }}" class="btn btn-sm btn-outline-primary mt-2 d-lg-none"><i class="bi bi-phone"></i> Open UPI app</a>
+          </div>
+          <form method="post" action="{% url 'orders:upi_submit' order.order_number %}" class="mb-3">
+            {% csrf_token %}
+            <label class="form-label small mb-1" for="utr">After paying, enter the 12-digit UTR / UPI Ref. No.</label>
+            <div class="input-group">
+              <input id="utr" name="utr" class="form-control" inputmode="numeric" pattern="\s*(\d\s*){12}" maxlength="20" placeholder="e.g. 412345678901" required>
+              <button class="btn btn-success"><i class="bi bi-check2-circle"></i> Submit</button>
+            </div>
+          </form>
+          {% endif %}
+          {% if razorpay_enabled or demo_payments %}<hr class="my-3">{% endif %}
+        {% endif %}
+        {% if razorpay_enabled %}
+        <button id="rzpBtn" class="btn btn-success w-100 mb-2"><i class="bi bi-credit-card"></i> Pay ₹{{ order.total_amount|floatformat:2|intcomma }} securely</button>
+        <div id="rzpErr" class="text-danger small mb-2" hidden></div>
+        <form id="rzpForm" method="post" action="{% url 'orders:razorpay_callback' order.order_number %}" hidden>
+          {% csrf_token %}
+          <input name="razorpay_payment_id"><input name="razorpay_order_id"><input name="razorpay_signature">
+        </form>
+        {% endif %}
+        {% if demo_payments %}
+        <p class="small text-muted-2">Demo mode: simulates a successful payment (development only). Commissions are calculated only after payment is confirmed.</p>
+        <form method="post" action="{% url 'orders:pay' order.order_number %}">{% csrf_token %}<button class="btn {% if razorpay_enabled %}btn-outline-secondary{% else %}btn-success{% endif %} w-100 mb-2"><i class="bi bi-bug"></i> Demo pay ₹{{ order.total_amount|floatformat:2|intcomma }}</button></form>
+        {% elif not razorpay_enabled and not upi_enabled %}
+        <p class="small text-muted-2">Online payment is not available yet. Contact support to pay for this order.</p>
+        {% endif %}
+        {% if not upi_pending %}<form method="post" action="{% url 'orders:cancel' order.order_number %}">{% csrf_token %}<button class="btn btn-outline-danger w-100 btn-sm">Cancel order</button></form>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-header">Payments</div>
+      <ul class="list-group list-group-flush small">
+        {% for p in order.payments.all %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ p.gateway|upper }} · {{ p.gateway_reference }}</span><span class="text-capitalize">{% if p.gateway == 'upi' and p.status == 'initiated' %}Awaiting confirmation{% elif p.gateway == 'upi' and p.status == 'failed' %}Rejected{% else %}{{ p.status }}{% endif %}</span></li>
+        {% empty %}
+          <li class="list-group-item text-muted-2">No payments yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if razorpay_enabled and order.status == 'pending' and order.customer == user %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById("rzpBtn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget, err = document.getElementById("rzpErr");
+  btn.disabled = true; err.hidden = true;
+  const res = await fetch("{% url 'orders:razorpay_start' order.order_number %}", {
+    method: "POST", headers: { "X-CSRFToken": document.querySelector("#rzpForm [name=csrfmiddlewaretoken]").value }
+  });
+  const opts = await res.json();
+  if (!res.ok) { err.textContent = opts.error; err.hidden = false; btn.disabled = false; return; }
+  opts.theme = { color: "#0f1f3d" };
+  opts.handler = (r) => {
+    const f = document.getElementById("rzpForm");
+    f.razorpay_payment_id.value = r.razorpay_payment_id;
+    f.razorpay_order_id.value = r.razorpay_order_id;
+    f.razorpay_signature.value = r.razorpay_signature;
+    f.submit();
+  };
+  opts.modal = { ondismiss: () => { btn.disabled = false; } };
+  new Razorpay(opts).open();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Pending placements{% endblock %}
+{% block page_title %}Pending Placements{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">Distributors waiting for a binary position <span class="badge bg-primary ms-1">{{ waiting|length }}</span></div>
+  <div class="card-body small text-muted-2 pb-0">The parent must be the sponsor or someone in the sponsor's team. Change the placement mode under Products &amp; Settings → Plan settings.</div>
+  <div class="table-responsive">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Member</th><th>Sponsor</th><th>Registered</th><th style="min-width:340px">Place under</th></tr></thead>
+      <tbody>
+      {% for m in waiting %}
+        <tr>
+          <td><div class="fw-semibold">{{ m.member_id }}</div><div class="small text-muted-2">{{ m.get_full_name|default:m.username }}</div></td>
+          <td class="small">{{ m.referral_record.sponsor.member_id|default:"—" }}</td>
+          <td class="small">{{ m.created_at|date:"d M Y, H:i" }}</td>
+          <td>
+            <form method="post" class="d-flex gap-1">
+              {% csrf_token %}<input type="hidden" name="member_id" value="{{ m.member_id }}">
+              <input name="parent_id" class="form-control form-control-sm" placeholder="Parent member ID" value="{{ m.referral_record.sponsor.member_id }}" required style="max-width:160px">
+              <select name="leg" class="form-select form-select-sm w-auto"><option value="left">Left</option><option value="right">Right</option></select>
+              <button class="btn btn-sm btn-primary">Place</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="4" class="text-center text-muted-2 py-4">No distributors are waiting for placement.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
